@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@swigpay/agent-wallet": ["packages/agent-wallet/src/index.ts"]
+    }
+  },
+  "include": ["agents/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules"]
+}

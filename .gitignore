@@ -1,0 +1,29 @@
+# Environment — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# Wallets — NEVER commit
+*.json.bak
+server-wallet.json
+agent-wallet.json
+human-wallet.json
+
+# Build output
+dist/
+.next/
+out/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Database (runtime, not source)
+*.db
+*.db-shm
+*.db-wal
+
+# Misc
+.DS_Store
+*.log
+.turbo/

@@ -1,0 +1,37 @@
+{
+  "name": "swigpay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm run --parallel --filter=!@swigpay/agent-wallet dev",
+    "server": "pnpm --filter @swigpay/mcp-server run dev",
+    "dashboard": "pnpm --filter @swigpay/dashboard run dev",
+    "demo": "tsx agents/demo.ts",
+    "provision": "tsx scripts/provision-agent.ts",
+    "setup": "tsx scripts/setup-wallets.ts",
+    "fund-check": "tsx scripts/fund-check.ts",
+    "typecheck": "pnpm run --recursive typecheck",
+    "build": "pnpm run --recursive build",
+    "test": "node --eval \"console.log('No root tests configured')\""
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "eslint": "^10.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@scure/base": "^2.0.0",
+    "@solana/kit": "^6.1.0",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.98.4",
+    "@sqds/multisig": "^2.1.4",
+    "@x402/core": "^2.5.0",
+    "@x402/mcp": "^2.5.0",
+    "@x402/svm": "^2.5.0",
+    "better-sqlite3": "^11.0.0",
+    "dotenv": "^16.4.0",
+    "zod": "^4.3.6"
+  }
+}

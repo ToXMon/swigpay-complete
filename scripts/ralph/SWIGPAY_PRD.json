@@ -1,0 +1,81 @@
+{
+  "project": "SwigPay",
+  "branchName": "ralph/swigpay-build",
+  "description": "SwigPay — OpenClaw Agent Smart Wallets with Squads v4 + x402 on Solana Devnet. Penn Blockchain Hackathon 2026. Bounty 1 (x402 agentic payments) + Bounty 3 (OpenClaw smart account provisioning).",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "MCP server returns HTTP 402 for paid tools",
+      "description": "As a developer, I need the MCP server to protect paid endpoints with x402 middleware so agents must pay USDC before accessing them.",
+      "acceptanceCriteria": [
+        "pnpm server starts without errors",
+        "curl http://localhost:4022/health returns 200 with tool list",
+        "Calling solana_price tool without payment returns x402 payment required error",
+        "Calling ping tool returns 'pong' without payment",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Squads v4 multisig provisioned for agent",
+      "description": "As a human operator, I need to provision a Squads v4 multisig for my OpenClaw agent with a USDC spending limit so I can control agent payments.",
+      "acceptanceCriteria": [
+        "pnpm provision creates multisig PDA visible on Solana Explorer devnet",
+        "Vault PDA is derived and logged",
+        "Spending limit PDA created with 1 USDC/day limit",
+        "SQUADS_* env vars printed and can be added to .env",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Requires HUMAN_PRIVATE_KEY_BASE58 and AGENT_PRIVATE_KEY_BASE58 in .env with funded wallets"
+    },
+    {
+      "id": "US-003",
+      "title": "Agent pays for MCP tool via x402 from Squads vault",
+      "description": "As an OpenClaw agent, I need to automatically pay for paid MCP tools using USDC from my Squads vault so I can access data autonomously.",
+      "acceptanceCriteria": [
+        "pnpm demo calls solana_price tool and payment is confirmed",
+        "USDC transfer visible on Solana Explorer devnet with real tx hash",
+        "Payment logged to SQLite with status 'approved' and explorer_url set",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Requires vault funded with USDC from Circle faucet: https://faucet.circle.com"
+    },
+    {
+      "id": "US-004",
+      "title": "Spend limit blocks over-threshold payments",
+      "description": "As a human operator, I need the spend policy to reject payments that exceed per-tx limits so the agent cannot overspend.",
+      "acceptanceCriteria": [
+        "enforceSpendPolicy returns approved=false for 10 USDC when perTxLimit is 0.01 USDC",
+        "Rejected payment logged to SQLite with status 'rejected'",
+        "pnpm demo Test 4 shows 'Spend limit correctly blocked the payment'",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Dashboard shows agent wallet and transaction feed",
+      "description": "As a human operator, I need a dashboard to see my agent's Squads vault address, daily spend, and all payment history.",
+      "acceptanceCriteria": [
+        "pnpm dashboard starts Next.js on port 3000",
+        "http://localhost:3000 loads without errors",
+        "Agent card shows vault PDA with clickable Solana Explorer link",
+        "Transaction feed shows payments from pnpm demo with status badges",
+        "Approve/Reject buttons visible for pending_approval payments",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Run pnpm demo first to populate the DB before checking dashboard"
+    }
+  ]
+}

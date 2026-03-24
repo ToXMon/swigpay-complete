@@ -1,0 +1,45 @@
+# SwigPay Progress Log
+# Append to this file after every Cascade session
+# Agent: READ the "Codebase Patterns" section at the top before starting work
+
+Started: 2026-03-23
+
+---
+
+## Codebase Patterns
+- `@sqds/multisig` permission helpers are accessed via `multisig.types.*`, not top-level exports.
+- `multisig.rpc.multisigCreateV2` needs `treasury` from `ProgramConfig.treasury` and `rentCollector` explicitly set.
+- `multisigAddSpendingLimit` uses `bigint` amount, while `spendingLimitUse` uses `number` amount.
+- USDC/Solana defaults now live in `packages/agent-wallet/src/config.ts` and MCP server defaults live in `apps/mcp-server/src/config.ts`.
+- Dashboard typecheck requires `apps/dashboard/tsconfig.json` and `apps/dashboard/next-env.d.ts`.
+
+---
+
+## Session Log
+
+### 2026-03-23 — Full Phase 1 / Phase 2 audit
+
+- Read required files first: `AGENTS.md`, `.windsurfrules`, `progress.txt`, `context/0xSero-agentic-lessons.md`, `packages/agent-wallet/AGENTS.md`, `apps/mcp-server/AGENTS.md`.
+- Verified Phase 1 server wiring: `createPaymentWrapper`, server-side `ExactSvmScheme`, imported `SOLANA_DEVNET_CAIP2` + `USDC_DEVNET_ADDRESS`, free `ping`, paid `solana_price` + `account_info`, and `GET /health`.
+- Found Phase 2 typecheck blockers in `packages/agent-wallet` and fixed them.
+- Fixed `packages/agent-wallet/src/squads.ts` to match installed Squads SDK usage:
+  - use `multisig.types.Permission/Permissions/Period`
+  - fetch program treasury via `ProgramConfig`
+  - pass `treasury` + `rentCollector` to `multisigCreateV2`
+  - import USDC mint from shared config instead of hardcoding
+- Split spending-limit execution into `packages/agent-wallet/src/squadsExecute.ts` so `squads.ts` is back under 200 lines.
+- Added `packages/agent-wallet/src/config.ts` for centralized runtime defaults and explorer helpers.
+- Added `packages/agent-wallet/src/mcpTransport.ts` shim so the wallet package can resolve the MCP HTTP transport during typecheck.
+- Updated `packages/agent-wallet/src/x402client.ts` to use shared config/constants and added an explicit return type.
+- Added `apps/mcp-server/src/config.ts` and updated server/account-info code to use it.
+- Replaced remaining obvious runtime hardcodes in:
+  - `apps/dashboard/app/api/agents/route.ts`
+  - `agents/demo.ts`
+  - `scripts/provision-agent.ts`
+  - `scripts/fund-check.ts`
+- Added missing dashboard TypeScript setup:
+  - `apps/dashboard/tsconfig.json`
+  - `apps/dashboard/next-env.d.ts`
+- Fixed dashboard `fetch().json()` typing in `app/page.tsx`.
+- Final result: `pnpm typecheck` passes with zero errors across `apps/mcp-server`, `packages/agent-wallet`, and `apps/dashboard`.
+

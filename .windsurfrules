@@ -1,0 +1,74 @@
+# SwigPay — Windsurf Cascade Rules
+# Penn Blockchain Conference Hackathon 2026
+
+## Priority Order (strict — do not skip ahead)
+1. Working x402 payment flow — MCP server returns 402, client auto-pays
+2. Squads v4 multisig created for agent + spending limit added
+3. x402 payments routed through Squads spendingLimitUse
+4. SQLite transaction log (endpoint, amount, txHash, agent_id, status)
+5. Demo agent (agents/demo.ts) showing rejected + approved payment
+6. Next.js dashboard (minimal: table + approve button is enough)
+
+## Code Style
+- TypeScript strict mode, ESM imports (`import`/`export` only — NO require())
+- No `any` types — use `unknown` with type guards or Zod for runtime validation
+- All async functions: try/catch with descriptive console.error messages
+- Log x402 events: `console.log("[x402]", { tool, amount_usdc, txHash, agent })`
+- Log Squads events: `console.log("[squads]", { op, multisigPda, vaultPda })`
+- File size: max 200 lines — split into modules if larger
+- All config via process.env validated with Zod on startup — fail fast if missing
+
+## Solana Rules
+- DEVNET ONLY: SOLANA_NETWORK=devnet always
+- Import USDC address and network ID from @x402/svm — never hardcode
+- `USDC_DECIMALS = 6` — 1 USDC = 1_000_000 units — never confuse
+- Squads program deployed on devnet: SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf
+- ALWAYS simulate transactions before broadcasting
+- ALWAYS await confirmTransaction before logging success
+- For spending limit amounts: use BigInt for multisigAddSpendingLimit, number for spendingLimitUse
+- Fund agent wallet from Circle faucet: https://faucet.circle.com (Solana Devnet, 20 USDC)
+
+## x402 Rules
+- Use @x402/mcp (createPaymentWrapper on server, createx402MCPClient on client)
+- Import ExactSvmScheme from "@x402/svm/exact/server" (server-side)
+- Import ExactSvmScheme from "@x402/svm" (client-side)
+- Import SOLANA_DEVNET_CAIP2, USDC_DEVNET_ADDRESS from "@x402/svm" — never hardcode
+- Facilitator: https://x402.org/facilitator (supports Solana devnet)
+- Price string format: "$0.001" (dollar string, middleware converts to USDC)
+- Private key for x402 signer: base58-encoded, decoded with @scure/base base58.decode()
+- Use createKeyPairSignerFromBytes from @solana/kit to create x402-compatible signer
+
+## Squads v4 Rules
+- SDK: @sqds/multisig v2.1.4 — import as `import * as multisig from "@sqds/multisig"`
+- Permissions import: `import { Permissions, Permission, Period } from "@sqds/multisig"`
+- Use multisigCreateV2 (not deprecated multisigCreate)
+- Spending limit: use multisigAddSpendingLimit, amount is BigInt, period is Period.Day
+- spendingLimitUse: amount is number, decimals: 6 for USDC
+- Vault PDA holds funds — send USDC to vaultPda, NOT multisigPda
+- getSpendingLimitPda requires both multisigPda and createKey
+
+## Commit Convention
+- `feat: [1.X] description` for phase 1
+- `feat: [2.X] description` for phase 2
+- etc.
+- Run `pnpm typecheck` before every commit — fix before committing
+- NEVER commit .env — only .env.example
+
+## Testing Gates
+- Phase 1: `curl -v http://localhost:4022/mcp` with paid tool call → must show x402 error (payment required)
+- Phase 2: `pnpm --filter @swigpay/agent-wallet run test:provision` → logs vaultPda on Explorer
+- Phase 3: `pnpm demo` → logs full payment + Solana Explorer tx link
+- Phase 4: `open http://localhost:3000` → shows agents + transaction feed
+
+## Fallback (Squads blocked >45 min)
+If @sqds/multisig throws on account creation after 45 min of debugging:
+1. Switch to plain Keypair as agent wallet in packages/agent-wallet/src/squads.ts
+2. Implement spend limits in spendPolicy.ts (off-chain enforcement)
+3. Mark in code: // FALLBACK: squads-integration-attempt.ts has original work
+4. Still qualifies for Bounty 1 (x402 works), partially for Bounty 3 (explain fallback in README)
+
+## Security
+- NEVER hardcode private keys — always process.env
+- Agent wallet: max 5 USDC on devnet (enough for demo)
+- Simulate transaction before broadcast — catch failures early
+- USDC amounts in logs: always show human-readable `${amount/1e6} USDC`

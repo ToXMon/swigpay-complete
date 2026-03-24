@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "solana-official": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.solana.com/mcp"]
+    }
+  }
+}
