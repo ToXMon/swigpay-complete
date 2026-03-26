@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ExplorerLink } from "./ExplorerLink";
 
 interface AgentOverviewProps {
@@ -26,6 +27,7 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
   const remainingToday = Math.max(0, config.dailyLimitUsdc - spentToday);
   const percentUsed = config.dailyLimitUsdc > 0 ? (spentToday / config.dailyLimitUsdc) * 100 : 0;
   const clusterQuery = `cluster=${config.network}`;
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gray-900/80 p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.03)] backdrop-blur">
@@ -48,7 +50,16 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
         </div>
       </div>
 
-      <dl className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <button
+        type="button"
+        onClick={() => setDetailsOpen((value) => !value)}
+        className="mt-6 text-sm font-medium text-cyan-300 transition hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+      >
+        {detailsOpen ? "Hide details ↑" : "Show details →"}
+      </button>
+
+      {detailsOpen && (
+        <dl className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
           <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Agent address</dt>
           <dd className="mt-3 font-mono text-sm text-white">
@@ -88,7 +99,8 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
             <p className="text-gray-400">{formatUsdc(config.perTxLimitUsdc)} per transaction</p>
           </dd>
         </div>
-      </dl>
+        </dl>
+      )}
 
       <div className="mt-6 rounded-xl border border-gray-800 bg-gray-950/70 p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

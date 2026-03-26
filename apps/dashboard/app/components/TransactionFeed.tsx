@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type { PaymentRecord } from "@swigpay/agent-wallet";
 import { ExplorerLink } from "./ExplorerLink";
 
@@ -29,7 +30,32 @@ function formatTimestamp(value: string) {
   });
 }
 
+function formatRelativeTimestamp(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+  if (diffMinutes < 1) return "just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 export function TransactionFeed({ payments }: TransactionFeedProps) {
+  const [filter, setFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
+  const approvedPayments = payments.filter((payment) => payment.status === "approved");
+  const pendingPayments = payments.filter((payment) => payment.status === "pending_approval");
+  const rejectedPayments = payments.filter((payment) => payment.status === "rejected");
+  const failedPayments = payments.filter((payment) => payment.status === "failed");
+  const filteredPayments = useMemo(() => {
+    if (filter === "approved") return approvedPayments;
+    if (filter === "pending") return pendingPayments;
+    if (filter === "rejected") return [...rejectedPayments, ...failedPayments];
+    return payments;
+  }, [approvedPayments, failedPayments, filter, payments, pendingPayments, rejectedPayments]);
+
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -41,10 +67,18 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
           {payments.length} records
         </span>
       </div>
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.15em]">
+        <button type="button" onClick={() => setFilter("all")} className={`rounded-full px-3 py-1 ${filter === "all" ? "border border-gray-600 bg-gray-800 text-white" : "border border-gray-700 bg-gray-950 text-gray-200"}`}>All ({payments.length})</button>
+        <button type="button" onClick={() => setFilter("approved")} className={`rounded-full px-3 py-1 ${filter === "approved" ? "border border-emerald-400/50 bg-emerald-500/20 text-emerald-100" : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>Approved ({approvedPayments.length})</button>
+        <button type="button" onClick={() => setFilter("pending")} className={`rounded-full px-3 py-1 ${filter === "pending" ? "border border-yellow-400/50 bg-yellow-500/20 text-yellow-100" : "border border-yellow-500/30 bg-yellow-500/10 text-yellow-200"}`}>Pending ({pendingPayments.length})</button>
+        <button type="button" onClick={() => setFilter("rejected")} className={`rounded-full px-3 py-1 ${filter === "rejected" ? "border border-red-400/50 bg-red-500/20 text-red-100" : "border border-red-500/30 bg-red-500/10 text-red-200"}`}>Rejected ({rejectedPayments.length + failedPayments.length})</button>
+      </div>
 
-      {payments.length === 0 ? (
+      {filteredPayments.length === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-gray-700 bg-gray-950/70 p-6 text-sm text-gray-400">
-          No transactions recorded yet. Run `pnpm demo` to generate paid tool calls and explorer links.
+          {payments.length === 0
+            ? "No transactions recorded yet. Run `pnpm demo` to generate paid tool calls and explorer links."
+            : "No transactions in this filter yet."}
         </div>
       ) : (
         <div className="mt-5 overflow-hidden rounded-xl border border-gray-800">
@@ -60,7 +94,7 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-900/70">
-                {payments.map((payment, index) => (
+                {filteredPayments.map((payment, index) => (
                   <tr 
                     key={payment.id} 
                     className="transition-all duration-200 hover:bg-gray-800/60 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
@@ -87,7 +121,10 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-4 align-top text-xs text-gray-400">{formatTimestamp(payment.createdAt)}</td>
+                    <td className="px-4 py-4 align-top text-xs text-gray-400">
+                      {formatRelativeTimestamp(payment.createdAt)}
+                      <span className="block text-[11px] text-gray-500">{formatTimestamp(payment.createdAt)}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

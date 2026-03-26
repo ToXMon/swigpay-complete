@@ -3,6 +3,8 @@
  * Records all x402 payment attempts, approvals, rejections
  */
 import Database from "better-sqlite3";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import type { PaymentRecord, PaymentStatus } from "./types.ts";
 
 // Lazy singleton with optimized settings
@@ -22,7 +24,8 @@ type PaymentRow = {
 };
 
 function getDbPath() {
-  return process.env.DB_PATH ?? "./swigpay.db";
+  const moduleDir = dirname(fileURLToPath(import.meta.url));
+  return process.env.DB_PATH ?? resolve(moduleDir, "../../../swigpay.db");
 }
 
 function mapPaymentRow(row: PaymentRow): PaymentRecord {
