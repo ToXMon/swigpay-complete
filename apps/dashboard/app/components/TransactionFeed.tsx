@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import type { PaymentRecord } from "@swigpay/agent-wallet";
 import { ExplorerLink } from "./ExplorerLink";
+import { formatRelativeTimestamp } from "./time";
+
+const REJECTED_STATUSES = ["rejected", "failed"] as const;
 
 interface TransactionFeedProps {
   payments: PaymentRecord[];
@@ -30,31 +33,64 @@ function formatTimestamp(value: string) {
   });
 }
 
-function formatRelativeTimestamp(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const diffMs = Date.now() - date.getTime();
-  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
-  if (diffMinutes < 1) return "just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+interface FilterButtonProps {
+  active: boolean;
+  count: number;
+  label: string;
+  onClick: () => void;
+  tone: "neutral" | "success" | "warning" | "danger";
+}
+
+function FilterButton({ active, count, label, onClick, tone }: FilterButtonProps) {
+  const classes =
+    tone === "success"
+      ? active
+        ? "border border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
+        : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+      : tone === "warning"
+        ? active
+          ? "border border-yellow-400/50 bg-yellow-500/20 text-yellow-100"
+          : "border border-yellow-500/30 bg-yellow-500/10 text-yellow-200"
+        : tone === "danger"
+          ? active
+            ? "border border-red-400/50 bg-red-500/20 text-red-100"
+            : "border border-red-500/30 bg-red-500/10 text-red-200"
+          : active
+            ? "border border-gray-600 bg-gray-800 text-white"
+            : "border border-gray-700 bg-gray-950 text-gray-200";
+
+  return (
+    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 ${classes}`}>
+      {label} ({count})
+    </button>
+  );
 }
 
 export function TransactionFeed({ payments }: TransactionFeedProps) {
   const [filter, setFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
-  const approvedPayments = payments.filter((payment) => payment.status === "approved");
-  const pendingPayments = payments.filter((payment) => payment.status === "pending_approval");
-  const rejectedPayments = payments.filter((payment) => payment.status === "rejected");
-  const failedPayments = payments.filter((payment) => payment.status === "failed");
-  const filteredPayments = useMemo(() => {
-    if (filter === "approved") return approvedPayments;
-    if (filter === "pending") return pendingPayments;
-    if (filter === "rejected") return [...rejectedPayments, ...failedPayments];
-    return payments;
-  }, [approvedPayments, failedPayments, filter, payments, pendingPayments, rejectedPayments]);
+  const { approvedCount, pendingCount, rejectedCount, filteredPayments } = useMemo(() => {
+    const approved = payments.filter((payment) => payment.status === "approved");
+    const pending = payments.filter((payment) => payment.status === "pending_approval");
+    const rejected = payments.filter((payment) =>
+      REJECTED_STATUSES.includes(payment.status as (typeof REJECTED_STATUSES)[number]),
+    );
+
+    const filtered =
+      filter === "approved"
+        ? approved
+        : filter === "pending"
+          ? pending
+          : filter === "rejected"
+            ? rejected
+            : payments;
+
+    return {
+      approvedCount: approved.length,
+      pendingCount: pending.length,
+      rejectedCount: rejected.length,
+      filteredPayments: filtered,
+    };
+  }, [filter, payments]);
 
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur">
@@ -68,10 +104,10 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
         </span>
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.15em]">
-        <button type="button" onClick={() => setFilter("all")} className={`rounded-full px-3 py-1 ${filter === "all" ? "border border-gray-600 bg-gray-800 text-white" : "border border-gray-700 bg-gray-950 text-gray-200"}`}>All ({payments.length})</button>
-        <button type="button" onClick={() => setFilter("approved")} className={`rounded-full px-3 py-1 ${filter === "approved" ? "border border-emerald-400/50 bg-emerald-500/20 text-emerald-100" : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>Approved ({approvedPayments.length})</button>
-        <button type="button" onClick={() => setFilter("pending")} className={`rounded-full px-3 py-1 ${filter === "pending" ? "border border-yellow-400/50 bg-yellow-500/20 text-yellow-100" : "border border-yellow-500/30 bg-yellow-500/10 text-yellow-200"}`}>Pending ({pendingPayments.length})</button>
-        <button type="button" onClick={() => setFilter("rejected")} className={`rounded-full px-3 py-1 ${filter === "rejected" ? "border border-red-400/50 bg-red-500/20 text-red-100" : "border border-red-500/30 bg-red-500/10 text-red-200"}`}>Rejected ({rejectedPayments.length + failedPayments.length})</button>
+        <FilterButton active={filter === "all"} count={payments.length} label="All" onClick={() => setFilter("all")} tone="neutral" />
+        <FilterButton active={filter === "approved"} count={approvedCount} label="Approved" onClick={() => setFilter("approved")} tone="success" />
+        <FilterButton active={filter === "pending"} count={pendingCount} label="Pending" onClick={() => setFilter("pending")} tone="warning" />
+        <FilterButton active={filter === "rejected"} count={rejectedCount} label="Rejected" onClick={() => setFilter("rejected")} tone="danger" />
       </div>
 
       {filteredPayments.length === 0 ? (

@@ -8,10 +8,10 @@ const workspaceRootEnvPath = resolve(workspaceRoot, ".env");
 const workspaceRootDbPath = resolve(workspaceRoot, "swigpay.db");
 
 loadEnv({ path: workspaceRootEnvPath });
-if (process.env.DB_PATH) {
-  process.env.DB_PATH = isAbsolute(process.env.DB_PATH)
-    ? process.env.DB_PATH
-    : resolve(workspaceRoot, process.env.DB_PATH);
-} else {
+
+const configuredDbPath = process.env.DB_PATH;
+if (!configuredDbPath) {
   process.env.DB_PATH = workspaceRootDbPath;
+} else if (!isAbsolute(configuredDbPath)) {
+  process.env.DB_PATH = resolve(workspaceRoot, configuredDbPath);
 }
