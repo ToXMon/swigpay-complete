@@ -206,3 +206,18 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-B3] Bridge list-tools subcommand`
 
+### 2026-03-26 — US-B4: Bridge call-tool subcommand (core x402 payment)
+
+- Added `call-tool` subcommand — the core x402 payment command for Agent Zero
+- Parses tool name from `process.argv[3]`, validates presence
+- Parses `--args` flag from process.argv as JSON string, defaults to empty object `{}`
+- Reuses `loadAgentConfigFromEnv()` from US-B3 for AgentConfig construction
+- Calls `createSwigPayClient`, then `callMcpTool(toolName, toolArgs)`
+- Extracts `result.content[0].text` as result string
+- For paid tools: reads `result.paymentResponse.{transaction, extensions.amountRaw}`, computes `amountUsdc = amountRaw / USDC_RAW_MULTIPLIER`, outputs `{tool, result, paymentMade: true, txHash, amountUsdc, explorerUrl}`
+- For free tools: outputs `{tool, result, paymentMade: false, txHash: null, amountUsdc: null, explorerUrl: null}`
+- Closes MCP connection in `finally` block
+- All errors to stderr only
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B4] Bridge call-tool subcommand (core x402 payment)`
+

@@ -48,6 +48,23 @@
       "priority": 3,
       "passes": true,
       "notes": "See agents/demo.ts lines 58-69 for exact client creation pattern. Build AgentConfig from env vars same as demo.ts lines 37-49."
+    },
+    {
+      "id": "US-B4",
+      "title": "Bridge call-tool subcommand (core x402 payment)",
+      "description": "Add 'call-tool' subcommand that connects to MCP server, calls a specific tool by name with optional JSON args, and outputs result + payment info as JSON. This is the core x402 payment command.",
+      "acceptanceCriteria": [
+        "pnpm tsx scripts/agent-zero-bridge.ts call-tool solana_price outputs JSON to stdout",
+        "JSON output contains keys: tool, result, paymentMade, txHash (if paid), amountUsdc (if paid), explorerUrl (if paid)",
+        "Supports --args flag: call-tool account_info --args '{\"address\":\"...\"}'",
+        "Free tools (ping) return paymentMade: false with null txHash/amountUsdc/explorerUrl",
+        "Paid tools return paymentMade: true with on-chain tx details",
+        "Errors go to stderr",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "See x402client.ts lines 126-136 for paymentResponse shape. Uses same loadAgentConfigFromEnv() as list-tools. Closes MCP connection in finally block."
     }
   ]
 }

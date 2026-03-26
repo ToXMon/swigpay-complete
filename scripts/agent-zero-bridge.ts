@@ -5,6 +5,7 @@
  *   pnpm tsx scripts/agent-zero-bridge.ts provision
  *   pnpm tsx scripts/agent-zero-bridge.ts fund [--amount <usdc>]
  *   pnpm tsx scripts/agent-zero-bridge.ts list-tools
+ *   pnpm tsx scripts/agent-zero-bridge.ts call-tool <name> [--args '<json>']
  *
  * All output goes to stdout as JSON; errors go to stderr only.
  */
@@ -37,14 +38,32 @@ function parseAmountFlag(): number {
   return 5.0;
 }
 
+function parseArgsFlag(): Record<string, unknown> {
+  const idx = process.argv.indexOf("--args");
+  if (idx !== -1 && process.argv[idx + 1]) {
+    try {
+      const parsed = JSON.parse(process.argv[idx + 1]);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      throw new Error("--args must be a JSON object");
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("--args must be")) throw err;
+      throw new Error(`--args must be valid JSON: ${process.argv[idx + 1]}`);
+    }
+  }
+  return {};
+}
+
 function usage(): void {
   process.stderr.write(
     "Usage: pnpm tsx scripts/agent-zero-bridge.ts <subcommand>\n" +
       "\n" +
       "Subcommands:\n" +
-      "  provision          Provision a Squads v4 agent wallet\n" +
-      "  fund [--amount N]  Fund vault with USDC (default: 5.0)\n" +
-      "  list-tools        List available MCP tools\n" +
+      "  provision                        Provision a Squads v4 agent wallet\n" +
+      "  fund [--amount N]                Fund vault with USDC (default: 5.0)\n" +
+      "  list-tools                      List available MCP tools\n" +
+      "  call-tool <name> [--args '<json>']  Call an MCP tool (triggers x402 payment)\n" +
       "\n"
   );
 }
@@ -158,7 +177,7 @@ function loadAgentConfigFromEnv(): AgentConfig {
 
   if (!agentKey || !agentAddress || !humanAddress || !multisigPda || !vaultPda || !spendingLimitPda) {
     throw new Error(
-      "Missing required env vars for list-tools. Required: " +
+      "Missing required env vars. Required: " +
         "AGENT_PRIVATE_KEY_BASE58, AGENT_ADDRESS, HUMAN_ADDRESS, " +
         "SQUADS_MULTISIG_PDA, SQUADS_VAULT_PDA, SQUADS_SPENDING_LIMIT_PDA"
     );
@@ -200,6 +219,61 @@ async function listTools(): Promise<void> {
   }
 }
 
+async function callTool(): Promise<void> {
+  const toolName = process.argv[3];
+  if (!toolName) {
+    process.stderr.write("Error: call-tool requires a tool name as argument\n");
+    process.exit(1);
+  }
+
+  const toolArgs = parseArgsFlag();
+  const agentConfig = loadAgentConfigFromEnv();
+  const agentKey = process.env.AGENT_PRIVATE_KEY_BASE58!;
+
+  const { callTool: callMcpTool, close } = await createSwigPayClient({
+    agentConfig,
+    agentPrivateKeyBase58: agentKey,
+  });
+
+  try {
+    const result = await callMcpTool(toolName, toolArgs);
+    const resultText = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
+
+    if (result.paymentMade && result.paymentResponse) {
+      const paymentResponse = result.paymentResponse as {
+        transaction?: string;
+        amount?: number;
+        extensions?: { amountRaw?: number };
+      };
+      const txHash = paymentResponse.transaction ?? "";
+      const amountRaw = Number(paymentResponse.extensions?.amountRaw ?? paymentResponse.amount ?? 0);
+      const amountUsdc = amountRaw / USDC_RAW_MULTIPLIER;
+
+      const output = {
+        tool: toolName,
+        result: resultText,
+        paymentMade: true,
+        txHash,
+        amountUsdc,
+        explorerUrl: buildExplorerTransactionUrl(txHash),
+      };
+      process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+    } else {
+      const output = {
+        tool: toolName,
+        result: resultText,
+        paymentMade: false,
+        txHash: null,
+        amountUsdc: null,
+        explorerUrl: null,
+      };
+      process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+    }
+  } finally {
+    await close();
+  }
+}
+
 async function main(): Promise<void> {
   try {
     switch (SUBCOMMAND) {
@@ -211,6 +285,9 @@ async function main(): Promise<void> {
         break;
       case "list-tools":
         await listTools();
+        break;
+      case "call-tool":
+        await callTool();
         break;
       default:
         usage();
