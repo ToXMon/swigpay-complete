@@ -81,6 +81,21 @@
       "priority": 5,
       "passes": true,
       "notes": "Reads only public env vars. If vault PDA set, derives vaultUsdcAta and queries on-chain balance. RPC errors caught gracefully, balance set to 0."
+    },
+    {
+      "id": "US-B6",
+      "title": "Update demo.ts with provision step (fallback)",
+      "description": "Add Test 0 to agents/demo.ts that programmatically calls provisionAgentWallet() if SQUADS_* vars are not set, showing full agent creation lifecycle as reliable fallback.",
+      "acceptanceCriteria": [
+        "agents/demo.ts has Test 0: Agent Wallet Provisioning section before Test 1",
+        "Test 0 checks if SQUADS_MULTISIG_PDA is set — skips if already provisioned",
+        "If not set, calls provisionAgentWallet() and logs PDAs + vault USDC ATA",
+        "Tests 1-4 remain unchanged after Test 0",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Removed early exit for missing SQUADS_* vars. Changed const to let for PDA vars so Test 0 can set them. Added loadKeypairFromBase58 + provisionAgentWallet to imports."
     }
   ]
 }

@@ -233,3 +233,15 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-B5] Bridge status subcommand`
 
+### 2026-03-26 — US-B6: Update demo.ts with provision step (fallback)
+
+- Added Test 0: Agent Wallet Provisioning to agents/demo.ts before Test 1
+- Checks if SQUADS_MULTISIG_PDA is set — skips with 'Already provisioned' if true
+- If not set, calls provisionAgentWallet() with keypairs from env, logs all PDAs + vault USDC ATA
+- Removed early exit for missing SQUADS_* vars — replaced with Test 0 provisioning fallback
+- Changed PDA vars from const to let so Test 0 can set them
+- Added loadKeypairFromBase58 + provisionAgentWallet to imports
+- Tests 1-4 completely unchanged
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B6] Update demo.ts with provision step (fallback)`
+

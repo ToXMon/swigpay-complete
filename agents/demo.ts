@@ -11,6 +11,8 @@ import {
   createSwigPayClient,
   DEFAULT_MCP_SERVER_URL,
   getUsdcAssociatedTokenAddress,
+  loadKeypairFromBase58,
+  provisionAgentWallet,
 } from "@swigpay/agent-wallet";
 import type { AgentConfig } from "@swigpay/agent-wallet";
 
@@ -20,27 +22,62 @@ async function main() {
 
   // ---- Load config from env ----
   const agentKey = process.env.AGENT_PRIVATE_KEY_BASE58;
-  const agentAddress = process.env.AGENT_ADDRESS;
-  const humanAddress = process.env.HUMAN_ADDRESS;
-  const multisigPda = process.env.SQUADS_MULTISIG_PDA;
-  const vaultPda = process.env.SQUADS_VAULT_PDA;
-  const spendingLimitPda = process.env.SQUADS_SPENDING_LIMIT_PDA;
+  const humanKey = process.env.HUMAN_PRIVATE_KEY_BASE58;
+  let agentAddress = process.env.AGENT_ADDRESS;
+  let humanAddress = process.env.HUMAN_ADDRESS;
+  let multisigPda = process.env.SQUADS_MULTISIG_PDA;
+  let vaultPda = process.env.SQUADS_VAULT_PDA;
+  let spendingLimitPda = process.env.SQUADS_SPENDING_LIMIT_PDA;
 
-  if (!agentKey || !agentAddress || !humanAddress || !multisigPda || !vaultPda || !spendingLimitPda) {
-    console.error("❌ Missing required env vars. Run: pnpm provision first.");
-    console.error("   Required: AGENT_PRIVATE_KEY_BASE58, AGENT_ADDRESS, HUMAN_ADDRESS,");
-    console.error("             SQUADS_MULTISIG_PDA, SQUADS_VAULT_PDA, SQUADS_SPENDING_LIMIT_PDA");
+  if (!agentKey || !humanKey) {
+    console.error("❌ Missing AGENT_PRIVATE_KEY_BASE58 and HUMAN_PRIVATE_KEY_BASE58 in .env");
     process.exit(1);
   }
 
-  // Build agent config from env
+  // ---- Test 0: Agent Wallet Provisioning ----
+  // Fallback demo flow — shows full agent creation lifecycle
+  console.log("\n--- Test 0: Agent Wallet Provisioning ---");
+  if (multisigPda) {
+    console.log("Already provisioned — skipping");
+  } else {
+    console.log("SQUADS_MULTISIG_PDA not set — provisioning agent wallet...");
+    const agentKeypair = loadKeypairFromBase58(agentKey);
+    const humanKeypair = loadKeypairFromBase58(humanKey);
+    const dailyLimitUsdc = Number(process.env.SQUADS_DAILY_LIMIT_USDC ?? "1.0");
+
+    const config = await provisionAgentWallet({
+      agentKeypair,
+      humanKeypair,
+      dailyLimitUsdc,
+      agentName: "demo-openclaw-agent",
+    });
+
+    agentAddress = config.agentAddress;
+    humanAddress = config.humanAddress;
+    multisigPda = config.multisigPda;
+    vaultPda = config.vaultPda;
+    spendingLimitPda = config.spendingLimitPda;
+
+    const provisionedVaultUsdcAta = getUsdcAssociatedTokenAddress(
+      new PublicKey(config.vaultPda)
+    ).toBase58();
+
+    console.log("✅ Agent wallet provisioned!");
+    console.log(`   Multisig PDA: ${config.multisigPda}`);
+    console.log(`   Vault PDA: ${config.vaultPda}`);
+    console.log(`   Spending Limit PDA: ${config.spendingLimitPda}`);
+    console.log(`   Vault USDC ATA: ${provisionedVaultUsdcAta}`);
+    console.log("   Add these to your .env for future runs.\n");
+  }
+
+  // Build agent config from env (or freshly provisioned values)
   const agentConfig: AgentConfig = {
     name: "demo-openclaw-agent",
-    agentAddress,
-    humanAddress,
-    multisigPda,
-    vaultPda,
-    spendingLimitPda,
+    agentAddress: agentAddress!,
+    humanAddress: humanAddress!,
+    multisigPda: multisigPda!,
+    vaultPda: vaultPda!,
+    spendingLimitPda: spendingLimitPda!,
     dailyLimitUsdc: Number(process.env.SQUADS_DAILY_LIMIT_USDC ?? "1.0"),
     perTxLimitUsdc: Number(process.env.SQUADS_PER_TX_LIMIT_USDC ?? "0.01"),
     approvalThresholdUsdc: 0.5,
