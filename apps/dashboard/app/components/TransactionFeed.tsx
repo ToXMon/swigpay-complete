@@ -60,12 +60,16 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-900/70">
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="transition hover:bg-gray-800/40">
+                {payments.map((payment, index) => (
+                  <tr 
+                    key={payment.id} 
+                    className="transition-all duration-200 hover:bg-gray-800/60 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                     <td className="px-4 py-4 align-top">
                       <div className="space-y-1">
                         <p className="font-medium text-white">{payment.tool}</p>
-                        <p className="max-w-md break-all text-xs text-gray-500">{payment.endpoint}</p>
+                        <p className="max-w-md break-all text-xs text-gray-500 font-mono">{payment.endpoint}</p>
                       </div>
                     </td>
                     <td className="px-4 py-4 align-top font-medium text-cyan-200">{payment.amountUsdc.toFixed(6)} USDC</td>
@@ -76,7 +80,7 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                     </td>
                     <td className="px-4 py-4 align-top font-mono text-xs text-gray-300">
                       {payment.explorerUrl ? (
-                        <ExplorerLink href={payment.explorerUrl} className="font-mono text-xs">
+                        <ExplorerLink href={payment.explorerUrl} className="font-mono text-xs hover:text-cyan-300 transition-colors">
                           {shortHash(payment.txHash)}
                         </ExplorerLink>
                       ) : (

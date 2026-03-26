@@ -5,6 +5,7 @@ interface AgentOverviewProps {
     agentAddress: string;
     vaultPda: string;
     multisigPda: string;
+    spendingLimitPda: string;
     dailyLimitUsdc: number;
     perTxLimitUsdc: number;
     explorerBase: string;
@@ -12,20 +13,6 @@ interface AgentOverviewProps {
   };
   spentToday: number;
 }
-
-const PROGRESS_WIDTHS = [
-  { max: 0, className: "w-0" },
-  { max: 10, className: "w-[10%]" },
-  { max: 20, className: "w-[20%]" },
-  { max: 30, className: "w-[30%]" },
-  { max: 40, className: "w-[40%]" },
-  { max: 50, className: "w-1/2" },
-  { max: 60, className: "w-[60%]" },
-  { max: 70, className: "w-[70%]" },
-  { max: 80, className: "w-[80%]" },
-  { max: 90, className: "w-[90%]" },
-  { max: 100, className: "w-full" },
-] as const;
 
 function shortAddress(value: string) {
   return value ? `${value.slice(0, 6)}...${value.slice(-4)}` : "—";
@@ -35,15 +22,9 @@ function formatUsdc(value: number) {
   return `${value.toFixed(value >= 1 ? 3 : 6)} USDC`;
 }
 
-function progressWidthClass(percentUsed: number) {
-  const safePercent = Number.isFinite(percentUsed) ? Math.max(0, Math.min(100, percentUsed)) : 0;
-  return PROGRESS_WIDTHS.find((step) => safePercent <= step.max)?.className ?? "w-full";
-}
-
 export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
   const remainingToday = Math.max(0, config.dailyLimitUsdc - spentToday);
   const percentUsed = config.dailyLimitUsdc > 0 ? (spentToday / config.dailyLimitUsdc) * 100 : 0;
-  const progressClassName = progressWidthClass(percentUsed);
   const clusterQuery = `cluster=${config.network}`;
 
   return (
@@ -67,7 +48,7 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
         </div>
       </div>
 
-      <dl className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <dl className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
           <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Agent address</dt>
           <dd className="mt-3 font-mono text-sm text-white">
@@ -93,6 +74,14 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
           </dd>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Spending limit PDA</dt>
+          <dd className="mt-3 font-mono text-sm text-white">
+            <ExplorerLink href={`${config.explorerBase}/address/${config.spendingLimitPda}?${clusterQuery}`} className="font-mono text-sm">
+              {shortAddress(config.spendingLimitPda)}
+            </ExplorerLink>
+          </dd>
+        </div>
+        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
           <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Limits</dt>
           <dd className="mt-3 space-y-1 text-sm text-white">
             <p>{formatUsdc(config.dailyLimitUsdc)} daily</p>
@@ -112,7 +101,10 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
           <p className="text-sm text-gray-400">Solana {config.network}</p>
         </div>
         <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-gray-800">
-          <div className={`h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-500 ${progressClassName}`} />
+          <div 
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-500" 
+            style={{ width: `${Math.max(0, Math.min(100, percentUsed))}%` }}
+          />
         </div>
       </div>
     </section>

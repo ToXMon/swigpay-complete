@@ -3,6 +3,7 @@ interface MetricCardProps {
   value: string;
   caption: string;
   tone?: "default" | "success" | "warning" | "info";
+  index?: number;
 }
 
 export function MetricCard({
@@ -10,6 +11,7 @@ export function MetricCard({
   value,
   caption,
   tone = "default",
+  index = 0,
 }: MetricCardProps) {
   const toneClasses =
     tone === "success"
@@ -20,8 +22,13 @@ export function MetricCard({
           ? "border-cyan-500/20 bg-cyan-500/5"
           : "border-gray-800 bg-gray-900/80";
 
+  const animationDelay = `${index * 100}ms`;
+
   return (
-    <div className={`rounded-2xl border p-4 shadow-[0_12px_30px_rgba(0,0,0,0.18)] ${toneClasses}`}>
+    <div 
+      className={`rounded-2xl border p-4 shadow-[0_12px_30px_rgba(0,0,0,0.18)] ${toneClasses} animate-fade-in-up`}
+      style={{ animationDelay }}
+    >
       <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{title}</p>
       <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
       <p className="mt-2 text-sm text-gray-400">{caption}</p>

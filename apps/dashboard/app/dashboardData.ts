@@ -5,6 +5,7 @@ export interface AgentData {
     agentAddress: string;
     vaultPda: string;
     multisigPda: string;
+    spendingLimitPda: string;
     dailyLimitUsdc: number;
     perTxLimitUsdc: number;
     explorerBase: string;
@@ -25,6 +26,9 @@ export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> 
   return response.json() as Promise<T>;
 }
 
-export function formatUsdc(value: number) {
+export function formatUsdc(value: number | undefined | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return "— USDC";
+  }
   return `${value.toFixed(value >= 1 ? 3 : 6)} USDC`;
 }
