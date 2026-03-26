@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import "../loadDashboardEnv";
 import { EXPLORER_BASE_URL, getPaymentsByAgent, SOLANA_NETWORK } from "@swigpay/agent-wallet";
 
-// Use absolute path to original database
-process.env.DB_PATH ??= "/Users/tolushekoni/Documents/swigpay-complete/swigpay.db";
-
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const agentId = url.searchParams.get("agentId") ?? process.env.AGENT_ADDRESS ?? "";

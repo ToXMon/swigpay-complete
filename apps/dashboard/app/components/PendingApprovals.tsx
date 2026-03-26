@@ -1,4 +1,5 @@
 import type { PaymentRecord } from "@swigpay/agent-wallet";
+import { formatRelativeTimestamp } from "./time";
 
 interface PendingApprovalsProps {
   busyAction: { id: number; action: "approve" | "reject" } | null;
@@ -17,12 +18,12 @@ function formatTimestamp(value: string) {
 
 export function PendingApprovals({ busyAction, onAction, payments }: PendingApprovalsProps) {
   return (
-    <section className="mb-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-6">
+    <section className={`mb-6 rounded-2xl p-6 ${payments.length > 0 ? "border border-amber-400/40 bg-amber-500/10 shadow-[0_0_28px_rgba(251,191,36,0.18)]" : "border border-yellow-500/20 bg-yellow-500/5"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-white">Pending approvals</h2>
+          <h2 className="text-lg font-semibold text-white">{payments.length > 0 ? "🛡️ Approval Required" : "Pending approvals"}</h2>
           <p className="mt-1 text-sm text-gray-400">
-            Payments above the auto-approval threshold wait here for a human decision.
+            {payments.length > 0 ? "Payments above the auto-approval threshold are awaiting a human decision." : "Payments above the auto-approval threshold wait here for a human decision."}
           </p>
         </div>
         <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-yellow-300">
@@ -32,7 +33,8 @@ export function PendingApprovals({ busyAction, onAction, payments }: PendingAppr
 
       {payments.length === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-yellow-500/20 bg-gray-950/60 p-5 text-sm text-gray-400">
-          No approvals are waiting right now. Demo payments under the configured threshold will settle automatically.
+          <p className="font-medium text-emerald-200">All clear</p>
+          <p className="mt-1">No approvals are waiting right now. Demo payments under the configured threshold will settle automatically.</p>
         </div>
       ) : (
         <div className="mt-5 space-y-3">
@@ -53,14 +55,16 @@ export function PendingApprovals({ busyAction, onAction, payments }: PendingAppr
                       </span>
                     </div>
                     <p className="break-all text-sm text-gray-400">{payment.endpoint}</p>
-                    <p className="text-xs text-gray-500">Requested {formatTimestamp(payment.createdAt)}</p>
+                    <p className="text-xs text-gray-500">
+                      Requested {formatRelativeTimestamp(payment.createdAt)} · {formatTimestamp(payment.createdAt)}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={disabled}
                       onClick={() => payment.id && onAction(payment.id, "approve")}
-                      className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-lg border border-emerald-400/40 bg-emerald-400/20 px-4 py-2 text-sm font-semibold text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.25)] transition hover:bg-emerald-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {approving ? "Approving..." : "Approve"}
                     </button>

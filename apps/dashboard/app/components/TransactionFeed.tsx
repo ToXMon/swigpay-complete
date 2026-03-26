@@ -1,5 +1,9 @@
+import { useMemo, useState } from "react";
 import type { PaymentRecord } from "@swigpay/agent-wallet";
 import { ExplorerLink } from "./ExplorerLink";
+import { formatRelativeTimestamp } from "./time";
+
+const REJECTED_STATUSES = ["rejected", "failed"] as const;
 
 interface TransactionFeedProps {
   payments: PaymentRecord[];
@@ -29,7 +33,65 @@ function formatTimestamp(value: string) {
   });
 }
 
+interface FilterButtonProps {
+  active: boolean;
+  count: number;
+  label: string;
+  onClick: () => void;
+  tone: "neutral" | "success" | "warning" | "danger";
+}
+
+function FilterButton({ active, count, label, onClick, tone }: FilterButtonProps) {
+  const classes =
+    tone === "success"
+      ? active
+        ? "border border-emerald-400/50 bg-emerald-500/20 text-emerald-100"
+        : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+      : tone === "warning"
+        ? active
+          ? "border border-yellow-400/50 bg-yellow-500/20 text-yellow-100"
+          : "border border-yellow-500/30 bg-yellow-500/10 text-yellow-200"
+        : tone === "danger"
+          ? active
+            ? "border border-red-400/50 bg-red-500/20 text-red-100"
+            : "border border-red-500/30 bg-red-500/10 text-red-200"
+          : active
+            ? "border border-gray-600 bg-gray-800 text-white"
+            : "border border-gray-700 bg-gray-950 text-gray-200";
+
+  return (
+    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 ${classes}`}>
+      {label} ({count})
+    </button>
+  );
+}
+
 export function TransactionFeed({ payments }: TransactionFeedProps) {
+  const [filter, setFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
+  const { approvedCount, pendingCount, rejectedCount, filteredPayments } = useMemo(() => {
+    const approved = payments.filter((payment) => payment.status === "approved");
+    const pending = payments.filter((payment) => payment.status === "pending_approval");
+    const rejected = payments.filter((payment) =>
+      REJECTED_STATUSES.includes(payment.status as (typeof REJECTED_STATUSES)[number]),
+    );
+
+    const filtered =
+      filter === "approved"
+        ? approved
+        : filter === "pending"
+          ? pending
+          : filter === "rejected"
+            ? rejected
+            : payments;
+
+    return {
+      approvedCount: approved.length,
+      pendingCount: pending.length,
+      rejectedCount: rejected.length,
+      filteredPayments: filtered,
+    };
+  }, [filter, payments]);
+
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -41,10 +103,18 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
           {payments.length} records
         </span>
       </div>
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.15em]">
+        <FilterButton active={filter === "all"} count={payments.length} label="All" onClick={() => setFilter("all")} tone="neutral" />
+        <FilterButton active={filter === "approved"} count={approvedCount} label="Approved" onClick={() => setFilter("approved")} tone="success" />
+        <FilterButton active={filter === "pending"} count={pendingCount} label="Pending" onClick={() => setFilter("pending")} tone="warning" />
+        <FilterButton active={filter === "rejected"} count={rejectedCount} label="Rejected" onClick={() => setFilter("rejected")} tone="danger" />
+      </div>
 
-      {payments.length === 0 ? (
+      {filteredPayments.length === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-gray-700 bg-gray-950/70 p-6 text-sm text-gray-400">
-          No transactions recorded yet. Run `pnpm demo` to generate paid tool calls and explorer links.
+          {payments.length === 0
+            ? "No transactions recorded yet. Run `pnpm demo` to generate paid tool calls and explorer links."
+            : "No transactions in this filter yet."}
         </div>
       ) : (
         <div className="mt-5 overflow-hidden rounded-xl border border-gray-800">
@@ -60,7 +130,7 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-900/70">
-                {payments.map((payment, index) => (
+                {filteredPayments.map((payment, index) => (
                   <tr 
                     key={payment.id} 
                     className="transition-all duration-200 hover:bg-gray-800/60 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
@@ -87,7 +157,10 @@ export function TransactionFeed({ payments }: TransactionFeedProps) {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-4 align-top text-xs text-gray-400">{formatTimestamp(payment.createdAt)}</td>
+                    <td className="px-4 py-4 align-top text-xs text-gray-400">
+                      {formatRelativeTimestamp(payment.createdAt)}
+                      <span className="block text-[11px] text-gray-500">{formatTimestamp(payment.createdAt)}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

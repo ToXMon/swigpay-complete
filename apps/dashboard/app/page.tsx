@@ -194,6 +194,13 @@ export default function Dashboard() {
           </div>
         )}
 
+        {refreshing && !loading && (
+          <div className="mb-6 rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+            <div className="h-3 w-40 rounded animate-shimmer" />
+            <div className="mt-3 h-2 w-full rounded animate-shimmer" />
+          </div>
+        )}
+
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             index={0}
