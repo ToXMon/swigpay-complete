@@ -7,16 +7,16 @@ import "dotenv/config";
 import { createx402MCPClient } from "@x402/mcp";
 import { SOLANA_DEVNET_CAIP2 } from "@x402/svm";
 import { base58 } from "@scure/base";
-import { StreamableHTTPClientTransport } from "./mcpTransport.js";
+import { StreamableHTTPClientTransport } from "./mcpTransport";
 import {
   buildExplorerTransactionUrl,
   DEFAULT_MCP_SERVER_URL,
   USDC_RAW_MULTIPLIER,
-} from "./config.js";
-import { enforceSpendPolicy } from "./spendPolicy.js";
-import { insertPayment, updatePaymentStatus } from "./db.js";
-import { SquadsExactScheme } from "./squadsScheme.js";
-import type { AgentConfig, SpendPolicy, PaymentRecord } from "./types.js";
+} from "./config";
+import { enforceSpendPolicy } from "./spendPolicy";
+import { insertPayment, updatePaymentStatus } from "./db";
+import { SquadsExactScheme } from "./squadsScheme";
+import type { AgentConfig, SpendPolicy, PaymentRecord } from "./types";
 
 export interface SwigPayClientOptions {
   agentConfig: AgentConfig;
@@ -124,8 +124,15 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
       const result = await originalCallTool(toolName, args);
 
       if (result.paymentMade && result.paymentResponse) {
-        const txHash = (result.paymentResponse as { transaction?: string }).transaction ?? "";
-        const amountRaw = Number((result.paymentResponse as { amount?: number }).amount ?? 0);
+        const paymentResponse = result.paymentResponse as {
+          transaction?: string;
+          amount?: number;
+          extensions?: {
+            amountRaw?: number;
+          };
+        };
+        const txHash = paymentResponse.transaction ?? "";
+        const amountRaw = Number(paymentResponse.extensions?.amountRaw ?? paymentResponse.amount ?? 0);
         const amountUsdc = amountRaw / USDC_RAW_MULTIPLIER;
         const explorerUrl = buildExplorerTransactionUrl(txHash);
 

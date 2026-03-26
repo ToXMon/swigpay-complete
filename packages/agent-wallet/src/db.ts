@@ -3,7 +3,7 @@
  * Records all x402 payment attempts, approvals, rejections
  */
 import Database from "better-sqlite3";
-import type { PaymentRecord, PaymentStatus } from "./types.js";
+import type { PaymentRecord, PaymentStatus } from "./types";
 
 const DB_PATH = process.env.DB_PATH ?? "./swigpay.db";
 

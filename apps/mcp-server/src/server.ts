@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import { fetchSolanaPrice } from "./tools/solanaPrice.js";
 import { fetchAccountInfo } from "./tools/accountInfo.js";
 import { FACILITATOR_URL, MCP_PRICE_PER_CALL_USD, MCP_SERVER_PORT } from "./config.js";
+import { SquadsFacilitatorClient } from "./squadsFacilitatorClient.js";
 
 loadEnv({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 
@@ -42,7 +43,9 @@ console.log(`   Price/call:  $${PRICE} USDC`);
 async function main() {
   // ---- x402 setup ----
   const facilitatorClient = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
-  const resourceServer = new x402ResourceServer(facilitatorClient);
+  const resourceServer = new x402ResourceServer(
+    new SquadsFacilitatorClient({ fallback: facilitatorClient })
+  );
   resourceServer.register(SOLANA_DEVNET_CAIP2, new ExactSvmScheme());
   await resourceServer.initialize();
   console.log("✅ x402 ResourceServer initialized");

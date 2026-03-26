@@ -6,6 +6,18 @@ description: Phase 4 — Next.js dashboard, README, demo video, submission. Run 
 
 Prerequisites: Phase 3 complete, all 4 demo tests passing, Explorer URL in hand
 
+## Step 0 — Design-first kickoff with Interface Craft
+Before changing any dashboard code, run the UI/UX skill pack:
+- `/interface-craft critique` to review the current dashboard
+- `/interface-craft storyboard` for motion and sequencing work
+- `/interface-craft dialkit` when you need live tuning controls
+
+Recommended prompt order:
+1. Review the dashboard for hierarchy, spacing, feedback states, and trust.
+2. Choose the lightest component primitive that fits the UI need.
+3. Tune motion only after the layout is clear.
+4. Finish with a final critique focused on polish and readability.
+
 ## Step 1 — Start the dashboard
 ```bash
 # Terminal 3 (keep server + demo terminal open too)
@@ -18,6 +30,12 @@ You should see:
 - Daily spend progress bar (should show some USDC spent from Phase 3)
 - Transaction feed with the payments from pnpm demo
 - No pending approvals (demo payments were under threshold)
+
+If the UI feels flat or hard to scan, use the Interface Craft prompts before editing code:
+- "Review the dashboard for visual hierarchy, spacing, contrast, and interaction clarity."
+- "Recommend the simplest shadcn/ui or Magic UI primitive for this component."
+- "Add storyboard-style motion with named timing constants and readable sequencing."
+- "Add DialKit controls for spring, opacity, and offset so the animation can be tuned live."
 
 ## Step 2 — If dashboard has errors
 Common fixes:

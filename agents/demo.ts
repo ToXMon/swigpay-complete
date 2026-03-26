@@ -6,7 +6,12 @@
  * (Requires MCP server running on :4022 and .env filled in)
  */
 import "dotenv/config";
-import { createSwigPayClient, DEFAULT_MCP_SERVER_URL } from "@swigpay/agent-wallet";
+import { PublicKey } from "@solana/web3.js";
+import {
+  createSwigPayClient,
+  DEFAULT_MCP_SERVER_URL,
+  getUsdcAssociatedTokenAddress,
+} from "@swigpay/agent-wallet";
 import type { AgentConfig } from "@swigpay/agent-wallet";
 
 async function main() {
@@ -42,9 +47,11 @@ async function main() {
     whitelistedEndpoints: [],
     createdAt: new Date().toISOString(),
   };
+  const vaultUsdcAta = getUsdcAssociatedTokenAddress(new PublicKey(agentConfig.vaultPda)).toBase58();
 
   console.log(`\n📋 Agent: ${agentConfig.agentAddress}`);
   console.log(`   Squads Vault: ${agentConfig.vaultPda}`);
+  console.log(`   Vault USDC ATA: ${vaultUsdcAta}`);
   console.log(`   Daily limit: ${agentConfig.dailyLimitUsdc} USDC`);
   console.log(`   Per-tx limit: ${agentConfig.perTxLimitUsdc} USDC\n`);
 
@@ -75,7 +82,8 @@ async function main() {
     console.log("SOL price data:", priceResult.content?.[0]?.text);
   } catch (err) {
     console.error("❌ Payment failed:", err);
-    console.log("💡 Ensure the vault PDA has USDC: send USDC to", agentConfig.vaultPda);
+    console.log("💡 Ensure the vault USDC ATA is funded or run: pnpm tsx scripts/fund-vault.ts");
+    console.log("   Vault USDC ATA:", vaultUsdcAta);
   }
 
   // ---- Test 3: Paid tool — Account info ----

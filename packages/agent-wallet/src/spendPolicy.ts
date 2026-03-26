@@ -2,8 +2,8 @@
  * SwigPay — Off-Chain Spend Policy Guard
  * Enforces per-tx limits and endpoint whitelists BEFORE submitting to Squads
  */
-import type { SpendPolicy, SpendPolicyResult } from "./types.js";
-import { db, getSpentToday, insertPayment } from "./db.js";
+import type { SpendPolicy, SpendPolicyResult } from "./types";
+import { db, getSpentToday, insertPayment } from "./db";
 
 /**
  * Check if a proposed payment is within policy.

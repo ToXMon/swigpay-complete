@@ -4,28 +4,35 @@
  */
 import "dotenv/config";
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
-import { SOLANA_RPC_URL, USDC_MINT_ADDRESS } from "@swigpay/agent-wallet";
+import { getAccount } from "@solana/spl-token";
+import {
+  getUsdcAssociatedTokenAddress,
+  SOLANA_RPC_URL,
+} from "@swigpay/agent-wallet";
 
 const RPC = SOLANA_RPC_URL;
-const USDC = USDC_MINT_ADDRESS;
 const connection = new Connection(RPC, "confirmed");
 
 async function checkWallet(name: string, address: string | undefined) {
-  if (!address) { console.log(`${name}: not set`); return; }
-  const pubkey = new PublicKey(address);
-  const sol = await connection.getBalance(pubkey) / LAMPORTS_PER_SOL;
-  let usdc = 0;
   try {
-    const ata = await getAssociatedTokenAddress(new PublicKey(USDC), pubkey);
-    const acc = await getAccount(connection, ata);
-    usdc = Number(acc.amount) / 1_000_000;
-  } catch {}
-  const status = sol < 0.1 ? "⚠️ LOW SOL" : usdc < 0.1 ? "⚠️ LOW USDC" : "✅";
-  console.log(`${status} ${name}:`);
-  console.log(`   Address: ${address}`);
-  console.log(`   SOL: ${sol.toFixed(4)}`);
-  console.log(`   USDC: ${usdc.toFixed(6)}`);
+    if (!address) { console.log(`${name}: not set`); return; }
+    const pubkey = new PublicKey(address);
+    const sol = await connection.getBalance(pubkey) / LAMPORTS_PER_SOL;
+    const ata = getUsdcAssociatedTokenAddress(pubkey);
+    let usdc = 0;
+    try {
+      const acc = await getAccount(connection, ata);
+      usdc = Number(acc.amount) / 1_000_000;
+    } catch {}
+    const status = sol < 0.1 ? "⚠️ LOW SOL" : usdc < 0.1 ? "⚠️ LOW USDC" : "✅";
+    console.log(`${status} ${name}:`);
+    console.log(`   Address: ${address}`);
+    console.log(`   USDC ATA: ${ata.toBase58()}`);
+    console.log(`   SOL: ${sol.toFixed(4)}`);
+    console.log(`   USDC: ${usdc.toFixed(6)}`);
+  } catch (error) {
+    console.error("[fund-check] Failed to check wallet", { name, address, error });
+  }
 }
 
 console.log(`\n💰 Wallet Balances (${RPC})\n${"─".repeat(50)}`);

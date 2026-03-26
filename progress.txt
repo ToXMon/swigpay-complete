@@ -43,3 +43,90 @@ Started: 2026-03-23
 - Fixed dashboard `fetch().json()` typing in `app/page.tsx`.
 - Final result: `pnpm typecheck` passes with zero errors across `apps/mcp-server`, `packages/agent-wallet`, and `apps/dashboard`.
 
+### 2026-03-24 — Phase 2 Completion & GitHub Push
+
+**✅ PHASE 2 CORE OBJECTIVES ACHIEVED:**
+- Created missing `scripts/fund-vault.ts` for vault funding
+- **Critical Architecture Fix:** Modified x402 client to use custom `SquadsExactScheme` instead of raw `ExactSvmScheme`
+- Created `packages/agent-wallet/src/squadsScheme.ts` implementing `SchemeNetworkClient` with "exact" scheme
+- Payments now route through Squads `spendingLimitUse` instead of direct agent signing ✅
+- Fixed all TypeScript compilation errors and eslint issues ✅
+- Successfully provisioned Squads v4 multisig with spending limits ✅
+- Committed and pushed to GitHub: https://github.com/ToXMon/swigpay-complete ✅
+
+**🔧 TECHNICAL IMPLEMENTATION:**
+- `SquadsExactScheme.createPaymentPayload()` executes `spendingLimitUse` with proper amount conversion
+- Spend policy enforcement runs before Squads execution (Test 4 blocks 10 USDC > 0.01 USDC limit)
+- x402 client correctly intercepts payments and routes through custom scheme
+- All wallets funded with SOL, Squads multisig created on devnet
+
+**📊 VALIDATION RESULTS (`pnpm demo`):**
+- Test 1 (free ping): ✅ Working
+- Test 2 (paid solana_price): ✅ x402 → Squads routing confirmed  
+- Test 3 (paid account_info): ✅ x402 → Squads routing confirmed
+- Test 4 (spend limit rejection): ✅ Policy enforcement working
+
+### 2026-03-24 — Vault token account fix and custom Squads verifier
+
+**✅ VAULT PAYMENT PATH RESOLVED:**
+- Root cause: Vault PDA is off-curve; ATA derivation needed `allowOwnerOffCurve=true`.
+- Created `packages/agent-wallet/src/tokenAccounts.ts` with off-curve-safe USDC ATA helpers.
+- Patched all vault USDC ATA usages:
+  - `packages/agent-wallet/src/squads.ts` (provisioning)
+  - `packages/agent-wallet/src/squadsExecute.ts` (payment execution)
+  - `scripts/fund-vault.ts` (funding)
+  - `scripts/fund-check.ts` (balance checks)
+  - `agents/demo.ts` (operator guidance)
+- Vault now funds and spends correctly; `spendingLimitUse` transfers USDC on-chain.
+
+**✅ SQUADS-AWARE X402 VERIFIER:**
+- Stock `@x402/svm` verifier only accepts direct SPL `transferChecked`; rejects Squads `spendingLimitUse`.
+- Added `apps/mcp-server/src/squadsFacilitatorClient.ts` wrapping `HTTPFacilitatorClient`.
+- Server verifies Squads payments locally by Solana tx signature and CPI `transferChecked` inspection.
+- Client `SquadsExactScheme` tags payloads with `settlement: "swigpay-squads-spending-limit"`.
+- Standard exact payments still delegate to HTTP facilitator; Squads payments route to custom verifier.
+
+**✅ APPROVED PAYMENT LOGGING FIX:**
+- Custom settlement responses now include `extensions.amountRaw`.
+- Client `x402client.ts` consumes metadata so console logs and SQLite records store correct `amount_usdc`.
+- New rows in `swigpay.db`: `solana_price`/`account_info` → `amount_usdc: 0.001`, `amount_raw: 1000`.
+
+**📊 FINAL VALIDATION (`pnpm demo`):**
+- Free `ping`: ✅ Working
+- Paid `solana_price`: ✅ Returns real SOL price data after Squads payment
+- Paid `account_info`: ✅ Returns real account info after Squads payment
+- Over-threshold rejection: ✅ Spend policy blocks 10 USDC > 0.01 USDC limit
+- SQLite log: ✅ New approved payments record correct amounts
+
+**🎯 PHASE 2 STATUS: COMPLETE**
+- End-to-end Squads-backed x402 payments work on devnet.
+- Ready for Phase 3 (full demo) and Phase 4 (dashboard).
+
+---
+
+### 2026-03-25 — Phase 3 Completion: Full E2E Demo + SQLite Log
+
+**✅ PHASE 3 CORE OBJECTIVES ACHIEVED:**
+- `pnpm demo` completed all 4 tests successfully ✅
+- Free `ping`: Working ✅
+- Paid `solana_price`: x402 → Squads payment confirmed ✅
+- Paid `account_info`: x402 → Squads payment confirmed ✅
+- Spend limit rejection: Policy blocks 10 USDC > 0.01 USDC limit ✅
+- SQLite `swigpay.db`: Fresh approved rows with `amount_raw=1000` ✅
+
+**🔗 LIVE EXPLORER URLs (Phase 3 Demo):**
+- solana_price payment: https://explorer.solana.com/tx/Yav8hnUKox2yLQrAoeAQYeRcJXEhpDANDDyUK3bkGQXCmHDBxzDp1E589gbwoQUc6UwtYJKaXdBE5rJ7gMqwed1?cluster=devnet
+- account_info payment: https://explorer.solana.com/tx/2aB8HHke1EyJFN1NQzBkkH7gekQDSLnfu374EywX1YXj1mvoyN3bBJzdDnYTPy6Y6vuv7vJyPbQaNgcBCE89jjDt?cluster=devnet
+- Squads multisig: https://explorer.solana.com/address/CoxTuxnXNACKWZx2VHw2ekUFgUJC1YUm4nmHGML4oRKJ?cluster=devnet
+
+**📊 SQLITE VERIFICATION:**
+- Latest approved payments recorded with correct `amount_usdc=0.001` and `amount_raw=1000`
+- Agent: 8PUwjtbG9YG75jaP7BdaedGX6Q2xaQ3SQEYZXPwwTdZS
+- Vault: GoA6hSeNTt6TpX1NcxLHo6gAxKvT3LFkv6cjRBK3wkqR
+
+**🎯 PHASE 3 STATUS: COMPLETE**
+- End-to-end demo with live on-chain payments verified
+- Ready for Phase 4 (dashboard + final submission prep)
+
+---
+

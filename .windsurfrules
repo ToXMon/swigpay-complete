@@ -60,6 +60,13 @@
 - Phase 3: `pnpm demo` → logs full payment + Solana Explorer tx link
 - Phase 4: `open http://localhost:3000` → shows agents + transaction feed
 
+## Phase 4 UI/UX Skill Pack
+- Before dashboard implementation, run `/interface-craft critique` to review the existing UI.
+- Use `/interface-craft storyboard` for readable page and component motion.
+- Use `/interface-craft dialkit` when tuning spacing, spring values, durations, or layout decisions.
+- Prefer shadcn/ui primitives first; reach for Magic UI, TweakCN, or React Bits only when they reduce effort or improve clarity.
+- Keep all Phase 4 UI work Tailwind-only, dark-themed, and aligned with the existing dashboard data flow.
+
 ## Fallback (Squads blocked >45 min)
 If @sqds/multisig throws on account creation after 45 min of debugging:
 1. Switch to plain Keypair as agent wallet in packages/agent-wallet/src/squads.ts

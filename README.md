@@ -12,13 +12,13 @@
 
 OpenClaw agents call paid MCP tools → HTTP 402 fires with USDC payment requirements → agent auto-pays via `@x402/mcp` + `@x402/svm` → USDC transfers on Solana devnet in ~400ms → server returns 200 with data. End-to-end agentic payment with no human intervention.
 
-**Live tx (demo):** https://explorer.solana.com/tx/DEMO_TX_HASH?cluster=devnet
+**Live tx (demo):** https://explorer.solana.com/tx/Yav8hnUKox2yLQrAoeAQYeRcJXEhpDANDDyUK3bkGQXCmHDBxzDp1E589gbwoQUc6UwtYJKaXdBE5rJ7gMqwed1?cluster=devnet
 
 ### Bounty 3: Smart Account Provisioning for OpenClaw Agents — $1,000
 
 Squads v4 multisig provisioned per OpenClaw agent. Agent keypair is a 1-of-2 member with `Initiate + Execute` permissions. Spending limit enforced on-chain via `multisigAddSpendingLimit` — agent cannot exceed daily USDC limit even if compromised. Human operator has `Permissions.all()` as the second member. Next.js dashboard shows all payments, pending approvals, and spend controls.
 
-**Squads multisig:** https://explorer.solana.com/address/DEMO_MULTISIG_PDA?cluster=devnet
+**Squads multisig:** https://explorer.solana.com/address/CoxTuxnXNACKWZx2VHw2ekUFgUJC1YUm4nmHGML4oRKJ?cluster=devnet
 
 ---
 
