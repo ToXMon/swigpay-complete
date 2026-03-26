@@ -1,0 +1,39 @@
+{
+  "project": "SwigPay",
+  "branchName": "feat/agent-zero-wallet-bridge",
+  "description": "Agent Zero Wallet Bridge — CLI bridge script that lets Agent Zero (Python AI) provision a Squads v4 wallet, fund it, and execute x402-paid MCP tools via JSON-in/JSON-out terminal commands. Also updates demo.ts with provision step as fallback.",
+  "userStories": [
+    {
+      "id": "US-B1",
+      "title": "Bridge script CLI skeleton with provision subcommand",
+      "description": "Create scripts/agent-zero-bridge.ts that accepts a subcommand as first argument. Implement 'provision' subcommand that calls provisionAgentWallet() from @swigpay/agent-wallet and outputs JSON with multisigPda, vaultPda, spendingLimitPda, vaultUsdcAta. Uses existing loadKeypairFromBase58 pattern from scripts/provision-agent.ts.",
+      "acceptanceCriteria": [
+        "scripts/agent-zero-bridge.ts exists with shebang-style tsx compatibility",
+        "pnpm tsx scripts/agent-zero-bridge.ts provision outputs valid JSON to stdout",
+        "JSON output contains keys: multisigPda, vaultPda, spendingLimitPda, vaultUsdcAta, agentAddress",
+        "Errors go to stderr, not stdout (so Agent Zero can parse stdout safely)",
+        "Typecheck passes: pnpm --filter @swigpay/agent-wallet run typecheck"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Read scripts/provision-agent.ts for exact import patterns. Use AGENT_PRIVATE_KEY_BASE58 and HUMAN_PRIVATE_KEY_BASE58 from .env. SQUADS_DAILY_LIMIT_USDC defaults to 1.0."
+    },
+    {
+      "id": "US-B2",
+      "title": "Bridge fund subcommand",
+      "description": "Add 'fund' subcommand to bridge that transfers USDC from agent wallet to vault USDC ATA. Reuses logic from scripts/fund-vault.ts. Outputs JSON with vaultUsdcAta, amountUsdc, txHash, explorerUrl.",
+      "acceptanceCriteria": [
+        "pnpm tsx scripts/agent-zero-bridge.ts fund outputs valid JSON to stdout",
+        "JSON output contains keys: vaultUsdcAta, amountUsdc, txHash, explorerUrl",
+        "Amount defaults to 5.0 USDC, overridable via --amount flag",
+        "Errors go to stderr",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Read scripts/fund-vault.ts for exact transfer logic. Use getUsdcAssociatedTokenAddress with allowOwnerOffCurve=true for vault ATA (see progress.txt Codebase Patterns)."
+    },
+    {
+      "id": "US-B3",
+      "title": "Bridge list-tools subcommand",
+      "description": 
