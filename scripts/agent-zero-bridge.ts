@@ -6,6 +6,7 @@
  *   pnpm tsx scripts/agent-zero-bridge.ts fund [--amount <usdc>]
  *   pnpm tsx scripts/agent-zero-bridge.ts list-tools
  *   pnpm tsx scripts/agent-zero-bridge.ts call-tool <name> [--args '<json>']
+ *   pnpm tsx scripts/agent-zero-bridge.ts status
  *
  * All output goes to stdout as JSON; errors go to stderr only.
  */
@@ -64,6 +65,7 @@ function usage(): void {
       "  fund [--amount N]                Fund vault with USDC (default: 5.0)\n" +
       "  list-tools                      List available MCP tools\n" +
       "  call-tool <name> [--args '<json>']  Call an MCP tool (triggers x402 payment)\n" +
+      "  status                          Report current wallet state (no transactions)\n" +
       "\n"
   );
 }
@@ -274,6 +276,56 @@ async function callTool(): Promise<void> {
   }
 }
 
+async function status(): Promise<void> {
+  const agentAddress = process.env.AGENT_ADDRESS ?? null;
+  const humanAddress = process.env.HUMAN_ADDRESS ?? null;
+  const multisigPda = process.env.SQUADS_MULTISIG_PDA ?? null;
+  const vaultPda = process.env.SQUADS_VAULT_PDA ?? null;
+  const spendingLimitPda = process.env.SQUADS_SPENDING_LIMIT_PDA ?? null;
+
+  const keysSet = !!(agentAddress && humanAddress);
+  const squadsProvisioned = !!multisigPda;
+
+  let vaultUsdcAta: string | null = null;
+  let vaultUsdcBalance = 0;
+  let vaultFunded = false;
+
+  if (vaultPda) {
+    try {
+      const connection = getConnection();
+      vaultUsdcAta = getUsdcAssociatedTokenAddress(
+        new PublicKey(vaultPda)
+      ).toBase58();
+      const balance = await connection.getTokenAccountBalance(
+        new PublicKey(vaultUsdcAta)
+      );
+      vaultUsdcBalance = Number(balance.value.amount) / USDC_RAW_MULTIPLIER;
+      vaultFunded = vaultUsdcBalance > 0;
+    } catch {
+      // Vault ATA may not exist yet — that's fine
+      vaultUsdcBalance = 0;
+      vaultFunded = false;
+    }
+  }
+
+  const result = {
+    agentAddress,
+    humanAddress,
+    multisigPda,
+    vaultPda,
+    spendingLimitPda,
+    vaultUsdcAta,
+    vaultUsdcBalance,
+    stepsComplete: {
+      keysSet,
+      squadsProvisioned,
+      vaultFunded,
+    },
+  };
+
+  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+}
+
 async function main(): Promise<void> {
   try {
     switch (SUBCOMMAND) {
@@ -288,6 +340,9 @@ async function main(): Promise<void> {
         break;
       case "call-tool":
         await callTool();
+        break;
+      case "status":
+        await status();
         break;
       default:
         usage();

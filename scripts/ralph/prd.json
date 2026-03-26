@@ -65,6 +65,22 @@
       "priority": 4,
       "passes": true,
       "notes": "See x402client.ts lines 126-136 for paymentResponse shape. Uses same loadAgentConfigFromEnv() as list-tools. Closes MCP connection in finally block."
+    },
+    {
+      "id": "US-B5",
+      "title": "Bridge status subcommand",
+      "description": "Add 'status' subcommand that reads .env and reports current wallet state without making any transactions. Outputs JSON with which steps are complete.",
+      "acceptanceCriteria": [
+        "pnpm tsx scripts/agent-zero-bridge.ts status outputs JSON to stdout",
+        "JSON contains keys: agentAddress, humanAddress, multisigPda, vaultPda, spendingLimitPda, vaultUsdcAta, vaultUsdcBalance, stepsComplete",
+        "stepsComplete has boolean flags: keysSet, squadsProvisioned, vaultFunded",
+        "vaultUsdcBalance is a number from on-chain query (0 if not provisioned)",
+        "No private keys in output",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Reads only public env vars. If vault PDA set, derives vaultUsdcAta and queries on-chain balance. RPC errors caught gracefully, balance set to 0."
     }
   ]
 }

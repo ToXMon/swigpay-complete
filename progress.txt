@@ -221,3 +221,15 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-B4] Bridge call-tool subcommand (core x402 payment)`
 
+### 2026-03-26 — US-B5: Bridge status subcommand
+
+- Added `status` subcommand — read-only wallet state check (no transactions)
+- Reads only public env vars: AGENT_ADDRESS, HUMAN_ADDRESS, SQUADS_MULTISIG_PDA, SQUADS_VAULT_PDA, SQUADS_SPENDING_LIMIT_PDA
+- Never outputs private keys
+- Derives vaultUsdcAta via getUsdcAssociatedTokenAddress if vaultPda is set
+- Queries on-chain vault USDC balance via getConnection().getTokenAccountBalance()
+- RPC errors caught gracefully — balance defaults to 0, vaultFunded=false
+- Output: {agentAddress, humanAddress, multisigPda, vaultPda, spendingLimitPda, vaultUsdcAta, vaultUsdcBalance, stepsComplete: {keysSet, squadsProvisioned, vaultFunded}}
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B5] Bridge status subcommand`
+
