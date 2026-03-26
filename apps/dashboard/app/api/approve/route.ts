@@ -3,8 +3,6 @@ import "../loadDashboardEnv";
 import { updatePaymentStatus } from "@swigpay/agent-wallet";
 import { z } from "zod";
 
-// Use absolute path to original database
-process.env.DB_PATH ??= "/Users/tolushekoni/Documents/swigpay-complete/swigpay.db";
 
 const approvalSchema = z.object({
   id: z.number().int().positive(),

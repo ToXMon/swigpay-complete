@@ -3,7 +3,14 @@
  * Records all x402 payment attempts, approvals, rejections
  */
 import Database from "better-sqlite3";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { PaymentRecord, PaymentStatus } from "./types.ts";
+
+// Resolve workspace root from this file's location:
+// packages/agent-wallet/src/db.ts → 3 levels up = monorepo root
+const _thisDir = dirname(fileURLToPath(import.meta.url));
+const WORKSPACE_ROOT = resolve(_thisDir, "../../..");
 
 // Lazy singleton with optimized settings
 let _db: Database.Database | null = null;
@@ -21,8 +28,13 @@ type PaymentRow = {
   explorer_url: string;
 };
 
-function getDbPath() {
-  return process.env.DB_PATH ?? "./swigpay.db";
+function getDbPath(): string {
+  const raw = process.env.DB_PATH ?? "./swigpay.db";
+  // If relative, resolve against workspace root (CWD-independent)
+  if (raw.startsWith(".") || raw.startsWith("..")) {
+    return resolve(WORKSPACE_ROOT, raw);
+  }
+  return raw;
 }
 
 function mapPaymentRow(row: PaymentRow): PaymentRecord {

@@ -27,3 +27,6 @@ node_modules/
 .DS_Store
 *.log
 .turbo/
+
+# Agent Zero project state (local only)
+.a0proj/
