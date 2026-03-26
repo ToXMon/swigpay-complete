@@ -14,8 +14,7 @@
         "Errors go to stderr, not stdout (so Agent Zero can parse stdout safely)",
         "Typecheck passes: pnpm --filter @swigpay/agent-wallet run typecheck"
       ],
-      "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Read scripts/provision-agent.ts for exact import patterns. Use AGENT_PRIVATE_KEY_BASE58 and HUMAN_PRIVATE_KEY_BASE58 from .env. SQUADS_DAILY_LIMIT_USDC defaults to 1.0."
     },
     {

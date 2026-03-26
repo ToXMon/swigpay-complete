@@ -170,3 +170,15 @@ Started: 2026-03-23
 
 ---
 
+### 2026-03-26 — US-B1: Bridge CLI skeleton with provision subcommand
+
+- Created `scripts/agent-zero-bridge.ts` — CLI interface for Agent Zero (Python AI)
+- Parses subcommand from `process.argv[2]`, implements `provision` subcommand
+- Calls `provisionAgentWallet()` from `@swigpay/agent-wallet` with env var keypairs
+- Computes `vaultUsdcAta` via `getUsdcAssociatedTokenAddress` (handles off-curve vault PDA)
+- Outputs JSON to stdout with keys: multisigPda, vaultPda, spendingLimitPda, vaultUsdcAta, agentAddress
+- All errors go to stderr only (safe for Agent Zero stdout parsing)
+- Unknown commands print usage to stderr and exit 1
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B1] Bridge CLI skeleton with provision subcommand`
+
