@@ -14,6 +14,7 @@
         "Errors go to stderr, not stdout (so Agent Zero can parse stdout safely)",
         "Typecheck passes: pnpm --filter @swigpay/agent-wallet run typecheck"
       ],
+      "priority": 1,
       "passes": true,
       "notes": "Read scripts/provision-agent.ts for exact import patterns. Use AGENT_PRIVATE_KEY_BASE58 and HUMAN_PRIVATE_KEY_BASE58 from .env. SQUADS_DAILY_LIMIT_USDC defaults to 1.0."
     },
@@ -29,10 +30,24 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Read scripts/fund-vault.ts for exact transfer logic. Use getUsdcAssociatedTokenAddress with allowOwnerOffCurve=true for vault ATA (see progress.txt Codebase Patterns)."
     },
     {
       "id": "US-B3",
       "title": "Bridge list-tools subcommand",
-      "description": 
+      "description": "Add 'list-tools' subcommand that connects to MCP server using createSwigPayClient from @swigpay/agent-wallet and outputs tool names + descriptions as JSON array.",
+      "acceptanceCriteria": [
+        "pnpm tsx scripts/agent-zero-bridge.ts list-tools outputs JSON array to stdout",
+        "Each element has keys: name, description",
+        "Uses createSwigPayClient with agentConfig built from .env vars",
+        "Closes MCP connection after listing",
+        "Errors go to stderr",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "See agents/demo.ts lines 58-69 for exact client creation pattern. Build AgentConfig from env vars same as demo.ts lines 37-49."
+    }
+  ]
+}

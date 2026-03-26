@@ -182,3 +182,27 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-B1] Bridge CLI skeleton with provision subcommand`
 
+### 2026-03-26 — US-B2: Bridge fund subcommand
+
+- Added `fund` subcommand to `scripts/agent-zero-bridge.ts`
+- Parses `--amount` flag from process.argv (defaults to 5.0 USDC)
+- Loads agent keypair + vault PDA from env, validates both present
+- Creates agent and vault USDC ATAs via `ensureUsdcAssociatedTokenAccount` (handles off-curve vault PDA)
+- Checks agent USDC balance before transfer, errors if insufficient
+- Transfers USDC via `@solana/spl-token` transfer, outputs JSON: vaultUsdcAta, amountUsdc, txHash, explorerUrl
+- All errors to stderr only
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B2] Bridge fund subcommand`
+
+### 2026-03-26 — US-B3: Bridge list-tools subcommand
+
+- Added `list-tools` subcommand to `scripts/agent-zero-bridge.ts`
+- Builds `AgentConfig` from env vars (same pattern as agents/demo.ts lines 37-49)
+- Validates all required SQUADS_* env vars, throws descriptive error if missing
+- Calls `createSwigPayClient` with agentConfig + agentPrivateKeyBase58
+- Calls `listTools()`, maps to `[{name, description}]` JSON array
+- Closes MCP connection in `finally` block
+- All errors to stderr only
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-B3] Bridge list-tools subcommand`
+

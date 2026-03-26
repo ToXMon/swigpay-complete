@@ -4,6 +4,7 @@
  * Usage:
  *   pnpm tsx scripts/agent-zero-bridge.ts provision
  *   pnpm tsx scripts/agent-zero-bridge.ts fund [--amount <usdc>]
+ *   pnpm tsx scripts/agent-zero-bridge.ts list-tools
  *
  * All output goes to stdout as JSON; errors go to stderr only.
  */
@@ -12,6 +13,7 @@ import { PublicKey } from "@solana/web3.js";
 import { transfer } from "@solana/spl-token";
 import {
   buildExplorerTransactionUrl,
+  createSwigPayClient,
   ensureUsdcAssociatedTokenAccount,
   getConnection,
   getUsdcAssociatedTokenAddress,
@@ -19,6 +21,7 @@ import {
   provisionAgentWallet,
   USDC_RAW_MULTIPLIER,
 } from "@swigpay/agent-wallet";
+import type { AgentConfig } from "@swigpay/agent-wallet";
 
 const SUBCOMMAND = process.argv[2];
 
@@ -41,6 +44,7 @@ function usage(): void {
       "Subcommands:\n" +
       "  provision          Provision a Squads v4 agent wallet\n" +
       "  fund [--amount N]  Fund vault with USDC (default: 5.0)\n" +
+      "  list-tools        List available MCP tools\n" +
       "\n"
   );
 }
@@ -144,6 +148,58 @@ async function fund(): Promise<void> {
   process.stdout.write(JSON.stringify(result, null, 2) + "\n");
 }
 
+function loadAgentConfigFromEnv(): AgentConfig {
+  const agentKey = process.env.AGENT_PRIVATE_KEY_BASE58;
+  const agentAddress = process.env.AGENT_ADDRESS;
+  const humanAddress = process.env.HUMAN_ADDRESS;
+  const multisigPda = process.env.SQUADS_MULTISIG_PDA;
+  const vaultPda = process.env.SQUADS_VAULT_PDA;
+  const spendingLimitPda = process.env.SQUADS_SPENDING_LIMIT_PDA;
+
+  if (!agentKey || !agentAddress || !humanAddress || !multisigPda || !vaultPda || !spendingLimitPda) {
+    throw new Error(
+      "Missing required env vars for list-tools. Required: " +
+        "AGENT_PRIVATE_KEY_BASE58, AGENT_ADDRESS, HUMAN_ADDRESS, " +
+        "SQUADS_MULTISIG_PDA, SQUADS_VAULT_PDA, SQUADS_SPENDING_LIMIT_PDA"
+    );
+  }
+
+  return {
+    name: "agent-zero-bridge",
+    agentAddress,
+    humanAddress,
+    multisigPda,
+    vaultPda,
+    spendingLimitPda,
+    dailyLimitUsdc: Number(process.env.SQUADS_DAILY_LIMIT_USDC ?? "1.0"),
+    perTxLimitUsdc: Number(process.env.SQUADS_PER_TX_LIMIT_USDC ?? "0.01"),
+    approvalThresholdUsdc: 0.5,
+    whitelistedEndpoints: [],
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function listTools(): Promise<void> {
+  const agentConfig = loadAgentConfigFromEnv();
+  const agentKey = process.env.AGENT_PRIVATE_KEY_BASE58!;
+
+  const { listTools: listMcpTools, close } = await createSwigPayClient({
+    agentConfig,
+    agentPrivateKeyBase58: agentKey,
+  });
+
+  try {
+    const { tools } = await listMcpTools();
+    const result = tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+    }));
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+  } finally {
+    await close();
+  }
+}
+
 async function main(): Promise<void> {
   try {
     switch (SUBCOMMAND) {
@@ -152,6 +208,9 @@ async function main(): Promise<void> {
         break;
       case "fund":
         await fund();
+        break;
+      case "list-tools":
+        await listTools();
         break;
       default:
         usage();
