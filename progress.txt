@@ -283,4 +283,21 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/mcp-server run typecheck` — zero errors
 - Committed: `feat: [US-A2] Add expensive_tool to MCP server at approval threshold price`
 - PRD: US-A2 passes=true
+- PRD: US-A2 passes=true
+
+### 2026-03-26 — US-A3: Bridge pre-flight policy check + retry-approved subcommand
+
+- Added imports: enforceSpendPolicy, insertPayment, getPendingApproval, DEFAULT_MCP_SERVER_URL, SpendPolicy
+- Added TOOL_PRICES_USDC map (expensive_tool: 0.50, others default to env MCP_PRICE_PER_CALL_USD)
+- Added buildSpendPolicyFromEnv() — sets perTxLimitUsdc = Math.max(perTxEnv, approvalThreshold) so approval gate is binding constraint
+- Modified callTool(): pre-flight enforceSpendPolicy check BEFORE createSwigPayClient
+  - requiresHumanApproval → insert pending_approval record with toolArgs JSON, return pending JSON, NO MCP call
+  - hard reject → return rejected JSON, NO MCP call
+  - approved → continue to normal MCP call (existing flow unchanged)
+- Added retryApproved() subcommand: reads approved record via getPendingApproval, parses toolArgs, sets approvalThresholdUsdc=9999 to bypass, calls MCP, returns approved JSON with txHash/explorerUrl
+- Non-existent/non-approved id → stderr error + exit(1)
+- Updated usage/help text with retry-approved subcommand
+- Root tsconfig typecheck passes with zero errors (includes bridge.ts via workspace)
+- Committed: `feat: [US-A3] Bridge pre-flight policy check + retry-approved subcommand`
+- PRD: US-A3 passes=true
 

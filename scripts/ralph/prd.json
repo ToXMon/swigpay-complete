@@ -52,7 +52,7 @@
         "pnpm --filter @swigpay/agent-wallet run typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "This is the core story. Key implementation details:
 1. Import enforceSpendPolicy from @swigpay/agent-wallet
 2. Build SpendPolicy from env vars (dailyLimitUsdc, perTxLimitUsdc, approvalThresholdUsdc, whitelistedEndpoints)

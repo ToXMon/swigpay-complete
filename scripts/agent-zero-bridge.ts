@@ -6,6 +6,7 @@
  *   pnpm tsx scripts/agent-zero-bridge.ts fund [--amount <usdc>]
  *   pnpm tsx scripts/agent-zero-bridge.ts list-tools
  *   pnpm tsx scripts/agent-zero-bridge.ts call-tool <name> [--args '<json>']
+ *   pnpm tsx scripts/agent-zero-bridge.ts retry-approved <payment_id>
  *   pnpm tsx scripts/agent-zero-bridge.ts status
  *
  * All output goes to stdout as JSON; errors go to stderr only.
@@ -16,16 +17,39 @@ import { transfer } from "@solana/spl-token";
 import {
   buildExplorerTransactionUrl,
   createSwigPayClient,
+  DEFAULT_MCP_SERVER_URL,
+  enforceSpendPolicy,
   ensureUsdcAssociatedTokenAccount,
   getConnection,
   getUsdcAssociatedTokenAddress,
+  getPendingApproval,
+  insertPayment,
   loadKeypairFromBase58,
   provisionAgentWallet,
   USDC_RAW_MULTIPLIER,
 } from "@swigpay/agent-wallet";
-import type { AgentConfig } from "@swigpay/agent-wallet";
+import type { AgentConfig, SpendPolicy } from "@swigpay/agent-wallet";
 
 const SUBCOMMAND = process.argv[2];
+
+// ---- Tool price map ----
+const TOOL_PRICES_USDC: Record<string, number> = {
+  expensive_tool: 0.50,
+  // everything else defaults to MCP_PRICE_PER_CALL_USD from env
+};
+
+// ---- Spend policy builder ----
+function buildSpendPolicyFromEnv(): SpendPolicy {
+  const approvalThreshold = Number(process.env.SQUADS_APPROVAL_THRESHOLD_USDC ?? "0.5");
+  const perTxEnv = Number(process.env.SQUADS_PER_TX_LIMIT_USDC ?? "0.01");
+  return {
+    dailyLimitUsdc: Number(process.env.SQUADS_DAILY_LIMIT_USDC ?? "1.0"),
+    // perTxLimit must be >= approvalThreshold so approval gate is the binding constraint
+    perTxLimitUsdc: Math.max(perTxEnv, approvalThreshold),
+    approvalThresholdUsdc: approvalThreshold,
+    whitelistedEndpoints: [],
+  };
+}
 
 function parseAmountFlag(): number {
   const idx = process.argv.indexOf("--amount");
@@ -65,6 +89,7 @@ function usage(): void {
       "  fund [--amount N]                Fund vault with USDC (default: 5.0)\n" +
       "  list-tools                      List available MCP tools\n" +
       "  call-tool <name> [--args '<json>']  Call an MCP tool (triggers x402 payment)\n" +
+      "  retry-approved <payment_id>       Retry a previously approved payment\n" +
       "  status                          Report current wallet state (no transactions)\n" +
       "\n"
   );
@@ -228,8 +253,56 @@ async function callTool(): Promise<void> {
     process.exit(1);
   }
 
-  const toolArgs = parseArgsFlag();
+  const args = parseArgsFlag();
   const agentConfig = loadAgentConfigFromEnv();
+
+  // ---- Pre-flight spend policy check ----
+  const toolPriceUsdc = TOOL_PRICES_USDC[toolName] ?? Number(process.env.MCP_PRICE_PER_CALL_USD ?? "0.001");
+  const policy = buildSpendPolicyFromEnv();
+  const policyResult = enforceSpendPolicy({
+    agentId: agentConfig.agentAddress,
+    amountUsdc: toolPriceUsdc,
+    endpoint: DEFAULT_MCP_SERVER_URL,
+    policy,
+  });
+
+  if (!policyResult.approved) {
+    if (policyResult.requiresHumanApproval) {
+      // Insert pending_approval record — NO MCP call
+      const amountRaw = Math.round(toolPriceUsdc * USDC_RAW_MULTIPLIER);
+      const paymentId = insertPayment({
+        agentId: agentConfig.agentAddress,
+        tool: toolName,
+        endpoint: DEFAULT_MCP_SERVER_URL,
+        amountUsdc: toolPriceUsdc,
+        amountRaw,
+        txHash: "",
+        status: "pending_approval",
+        createdAt: new Date().toISOString(),
+        explorerUrl: "",
+        toolArgs: JSON.stringify(args),
+      });
+      process.stdout.write(JSON.stringify({
+        tool: toolName,
+        status: "pending_approval",
+        paymentId,
+        reason: policyResult.reason,
+        amountUsdc: toolPriceUsdc,
+      }));
+      return;
+    } else {
+      // Hard reject
+      process.stdout.write(JSON.stringify({
+        tool: toolName,
+        status: "rejected",
+        reason: policyResult.reason,
+        amountUsdc: toolPriceUsdc,
+      }));
+      return;
+    }
+  }
+
+  // ---- Policy approved — proceed with normal MCP call ----
   const agentKey = process.env.AGENT_PRIVATE_KEY_BASE58!;
 
   const { callTool: callMcpTool, close } = await createSwigPayClient({
@@ -238,7 +311,7 @@ async function callTool(): Promise<void> {
   });
 
   try {
-    const result = await callMcpTool(toolName, toolArgs);
+    const result = await callMcpTool(toolName, args);
     const resultText = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
 
     if (result.paymentMade && result.paymentResponse) {
@@ -271,6 +344,58 @@ async function callTool(): Promise<void> {
       };
       process.stdout.write(JSON.stringify(output, null, 2) + "\n");
     }
+  } finally {
+    await close();
+  }
+}
+
+async function retryApproved(): Promise<void> {
+  const paymentId = Number(process.argv[3]);
+  if (!paymentId || isNaN(paymentId)) {
+    process.stderr.write("Usage: agent-zero-bridge.ts retry-approved <payment_id>\n");
+    process.exit(1);
+  }
+
+  const record = getPendingApproval(paymentId);
+  if (!record) {
+    process.stderr.write(`No approved payment found with id ${paymentId}\n`);
+    process.exit(1);
+  }
+
+  // Parse stored tool args
+  const retryArgs: Record<string, unknown> = record.toolArgs ? JSON.parse(record.toolArgs) : {};
+
+  // Build config with BYPASSED threshold so x402client doesn't re-check
+  const agentConfig = loadAgentConfigFromEnv();
+  agentConfig.approvalThresholdUsdc = 9999;
+
+  const { callTool: callMcpTool, close } = await createSwigPayClient({
+    agentConfig,
+    agentPrivateKeyBase58: process.env.AGENT_PRIVATE_KEY_BASE58!,
+  });
+
+  try {
+    const result = await callMcpTool(record.tool, retryArgs);
+    const output: Record<string, unknown> = {
+      tool: record.tool,
+      status: "approved",
+      result: result.content?.[0]?.text ?? "",
+      paymentMade: result.paymentMade ?? false,
+      txHash: null,
+      amountUsdc: null,
+      explorerUrl: null,
+    };
+    if (result.paymentMade && result.paymentResponse) {
+      const pr = result.paymentResponse as {
+        transaction?: string;
+        amount?: number;
+        extensions?: { amountRaw?: number };
+      };
+      output.txHash = pr.transaction ?? null;
+      output.amountUsdc = Number(pr.extensions?.amountRaw ?? 0) / USDC_RAW_MULTIPLIER;
+      output.explorerUrl = output.txHash ? buildExplorerTransactionUrl(output.txHash as string) : null;
+    }
+    process.stdout.write(JSON.stringify(output));
   } finally {
     await close();
   }
@@ -340,6 +465,9 @@ async function main(): Promise<void> {
         break;
       case "call-tool":
         await callTool();
+        break;
+      case "retry-approved":
+        await retryApproved();
         break;
       case "status":
         await status();
