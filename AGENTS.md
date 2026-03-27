@@ -257,8 +257,44 @@ const client = createx402MCPClient({
 
 ---
 
+## Quick Demo (3 minutes)
+
+```
+Terminal 1:  pnpm server          # MCP server on :4022
+Terminal 2:  pnpm dashboard       # Next.js on :3000
+Terminal 3:  pnpm demo-flow       # Full automated demo
+```
+
+`pnpm demo-flow` runs all 7 steps automatically:
+1. Wallet status (reads Squads PDA + vault USDC balance)
+2. List MCP tools (4 tools: 1 free, 2 cheap, 1 expensive)
+3. Call `ping` — free, no payment
+4. Call `solana_price` — $0.001 USDC paid via Squads spendingLimitUse
+5. Call `expensive_tool` — $0.50 blocked by spend policy → `pending_approval`
+6. Polls DB every 2s waiting for human to Approve in dashboard
+7. Auto-retries payment with bypassed limits → $0.50 USDC on-chain tx
+
+**During step 6:** Open http://localhost:3000, click Approve on the yellow card.
+The script auto-detects the approval and retries — no manual commands needed.
+
+Legacy manual flow: `scripts/agent-zero-bridge.ts` supports `status`, `list-tools`,
+`call-tool <name>`, `retry-approved <id>` subcommands.
+
+---
+
 ## Codebase Patterns
-[Agent fills in as development progresses]
+
+- All workspace packages use `import "dotenv/config"` at top for env loading
+- Dashboard API routes import `../loadDashboardEnv` side-effect to set DB_PATH
+- MCP server uses `StreamableHTTPServerTransport` with session management
+- x402 payments go through `SquadsExactScheme` → `spendingLimitUse` (not raw keypair signing)
+- Spend policy enforced at TWO levels: bridge script (pre-flight) + x402client (onPaymentRequested)
+- Retry-after-approval must bypass ALL limits (threshold + perTx + daily) by setting to 9999
 
 ## Known Gotchas
-[Agent fills in as development progresses]
+
+- `spendingLimitUse` amount param is `number`, but `multisigAddSpendingLimit` amount is `BigInt`
+- `getPendingApproval` in db.ts filters for `status = 'approved'` (use `getPaymentById` for any status)
+- MCP SDK transport path: `StreamableHTTPClientTransport` re-exported from `mcpTransport.ts`
+- Vault USDC ATA must exist before funding — `ensureUsdcAssociatedTokenAccount` handles this
+- x402 facilitator can be slow (5-10s) — payments may take time to settle
