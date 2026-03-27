@@ -11,13 +11,21 @@
 
 "So this is SwigPay. It's on main branch. Everything you're about to see is open source and real — real USDC on Solana devnet, real Squads v4 multisig transactions, real x402 protocol payments."
 
-**[Show 3 terminal windows side by side]**
+**[In opencode, type: run the full SwigPay demo with pnpm demo-flow]**
 
-"I have three terminals. Terminal one is the MCP server — this is the thing the AI agent pays to call tools. Terminal two is the dashboard — that's where I, the human operator, can approve or reject payments. Terminal three is where the agent runs."
+"All I need is one command. The script starts the MCP server, the dashboard, and runs the entire demo flow automatically."
 
 ---
 
-## STEP 1: Wallet Status (~0-5s)
+## STEP 0: Auto-Start (~0-20s)
+
+**[demo-flow starts MCP server + dashboard]**
+
+"The script automatically starts the MCP server on port 4022 and the dashboard on port 3000. It waits for both to be ready before proceeding. No manual terminal setup needed."
+
+---
+
+## STEP 1: Wallet Status (~20-25s)
 
 **[demo-flow prints agent address, vault PDA, balances]**
 
