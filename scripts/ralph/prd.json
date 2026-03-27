@@ -17,7 +17,7 @@
         "pnpm --filter @swigpay/agent-wallet run typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Since the DB might already exist from previous runs, the CREATE TABLE IF NOT EXISTS won't add the new column. Handle this by also running ALTER TABLE payments ADD COLUMN tool_args TEXT DEFAULT '' in a try/catch (ignore error if column exists). Read db.ts carefully — the schema is in getDb() function around line 53."
     },
     {

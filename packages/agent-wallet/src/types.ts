@@ -36,6 +36,7 @@ export interface PaymentRecord {
   status: PaymentStatus;
   createdAt: string;
   explorerUrl: string;
+  toolArgs?: string;
 }
 
 export interface SpendPolicyResult {

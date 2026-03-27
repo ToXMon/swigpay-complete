@@ -245,3 +245,27 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-B6] Update demo.ts with provision step (fallback)`
 
+### 2026-03-26 — US-B7: Full integration verification
+
+- All 3 typechecks pass with zero errors: agent-wallet, mcp-server, dashboard
+- Bridge default/no-command case shows usage with all 5 subcommands (verified via grep)
+- agents/demo.ts Test 0 block exists before Test 1 (verified via grep)
+- All changes on feat/agent-zero-wallet-bridge branch (verified)
+- No fixes needed — all acceptance criteria met
+- PRD: all 7 stories (US-B1 through US-B7) with passes=true
+- PRD: all 7 stories (US-B1 through US-B7) with passes=true
+
+### 2026-03-26 — US-A1: Add tool_args column to DB schema + pending approval query
+
+- Added `toolArgs?: string` to PaymentRecord interface in types.ts
+- Added `tool_args TEXT NOT NULL DEFAULT ''` to CREATE TABLE in db.ts getDb()
+- Added ALTER TABLE migration in try/catch for existing DBs (column already exists ignored)
+- Added `tool_args: string` to PaymentRow type
+- Updated mapPaymentRow to include toolArgs from row
+- Updated insertPayment to accept optional toolArgs and store it (defaults to '')
+- Added getPendingApproval(id: number): PaymentRecord | null — queries WHERE id = ? AND status = 'approved'
+- index.ts unchanged — `export * from './db'` auto-exports getPendingApproval
+- Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
+- Committed: `feat: [US-A1] Add tool_args column to DB schema + pending approval query`
+- PRD: US-A1 passes=true
+

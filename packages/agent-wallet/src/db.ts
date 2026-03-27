@@ -21,6 +21,7 @@ type PaymentRow = {
   status: PaymentStatus;
   created_at: string;
   explorer_url: string;
+  tool_args: string;
 };
 
 function getDbPath() {
@@ -40,6 +41,7 @@ function mapPaymentRow(row: PaymentRow): PaymentRecord {
     status: row.status,
     createdAt: row.created_at,
     explorerUrl: row.explorer_url,
+    toolArgs: row.tool_args,
   };
 }
 
@@ -61,12 +63,16 @@ export function getDb(): Database.Database {
         tx_hash TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'pending_approval',
         created_at TEXT NOT NULL,
-        explorer_url TEXT NOT NULL DEFAULT ''
+        explorer_url TEXT NOT NULL DEFAULT '',
+        tool_args TEXT NOT NULL DEFAULT ''
       );
       CREATE INDEX IF NOT EXISTS idx_payments_agent ON payments(agent_id);
       CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
       CREATE INDEX IF NOT EXISTS idx_payments_created ON payments(created_at);
     `);
+    try {
+      _db.exec("ALTER TABLE payments ADD COLUMN tool_args TEXT NOT NULL DEFAULT ''");
+    } catch (_e) { /* column already exists */ }
   }
   return _db;
 }
@@ -76,8 +82,8 @@ export const db = getDb;
 
 export function insertPayment(record: Omit<PaymentRecord, "id">): number {
   const stmt = getDb().prepare(`
-    INSERT INTO payments (agent_id, tool, endpoint, amount_usdc, amount_raw, tx_hash, status, created_at, explorer_url)
-    VALUES (@agentId, @tool, @endpoint, @amountUsdc, @amountRaw, @txHash, @status, @createdAt, @explorerUrl)
+    INSERT INTO payments (agent_id, tool, endpoint, amount_usdc, amount_raw, tx_hash, status, created_at, explorer_url, tool_args)
+    VALUES (@agentId, @tool, @endpoint, @amountUsdc, @amountRaw, @txHash, @status, @createdAt, @explorerUrl, @toolArgs)
   `);
   const result = stmt.run({
     agentId: record.agentId,
@@ -89,6 +95,7 @@ export function insertPayment(record: Omit<PaymentRecord, "id">): number {
     status: record.status,
     createdAt: record.createdAt,
     explorerUrl: record.explorerUrl,
+    toolArgs: record.toolArgs ?? '',
   });
   return result.lastInsertRowid as number;
 }
@@ -123,6 +130,13 @@ export function getPendingPayments(): PaymentRecord[] {
     .prepare("SELECT * FROM payments WHERE status = 'pending_approval' ORDER BY id DESC")
     .all() as PaymentRow[];
   return rows.map(mapPaymentRow);
+}
+
+export function getPendingApproval(id: number): PaymentRecord | null {
+  const row = getDb()
+    .prepare("SELECT * FROM payments WHERE id = ? AND status = 'approved'")
+    .get(id) as PaymentRow | undefined;
+  return row ? mapPaymentRow(row) : null;
 }
 
 export function getSpentToday(agentId: string): number {
