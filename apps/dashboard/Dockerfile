@@ -36,7 +36,7 @@ COPY packages/agent-wallet/src/ packages/agent-wallet/src/
 COPY apps/dashboard/package.json apps/dashboard/
 COPY apps/dashboard/.next/ apps/dashboard/.next/
 COPY apps/dashboard/app/ apps/dashboard/app/
-COPY apps/dashboard/next.config.ts apps/dashboard/
+COPY apps/dashboard/next.config.mjs apps/dashboard/
 COPY apps/dashboard/postcss.config.mjs apps/dashboard/
 COPY apps/dashboard/tailwind.config.ts apps/dashboard/
 COPY apps/dashboard/tsconfig.json apps/dashboard/
