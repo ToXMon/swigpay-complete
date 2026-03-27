@@ -6,6 +6,8 @@
  * Usage: pnpm demo-flow
  */
 import "dotenv/config";
+import { execSync, spawn } from "node:child_process";
+import http from "node:http";
 import { PublicKey } from "@solana/web3.js";
 import {
   buildExplorerTransactionUrl,
@@ -342,11 +344,67 @@ async function step7_retryPayment(paymentId: number): Promise<string | null> {
   }
 }
 
+async function killPort(port: number): Promise<void> {
+  try {
+    execSync(`lsof -ti:${port} 2>/dev/null | xargs kill -9 2>/dev/null`, { stdio: "ignore" });
+  } catch { /* no process on port */ }
+}
+
+function waitForEndpoint(port: number, path: string, timeoutMs = 30000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    const check = () => {
+      if (Date.now() > deadline) { reject(new Error(`Timeout waiting for :${port}${path}`)); return; }
+      const req = http.get(`http://localhost:${port}${path}`, (res) => {
+        res.resume();
+        resolve();
+      });
+      req.on("error", () => setTimeout(check, 1000));
+      req.setTimeout(2000, () => { req.destroy(); setTimeout(check, 1000); });
+    };
+    check();
+  });
+}
+
+function spawnDetached(cmd: string, args: string[], label: string) {
+  const child = spawn(cmd, args, {
+    detached: true,
+    stdio: "ignore",
+    cwd: process.cwd(),
+    env: { ...process.env },
+  });
+  child.unref();
+  console.log(`${elapsed()}  [bg] ${label} started (pid ${child.pid})`);
+}
+
+async function startServices(): Promise<void> {
+  stepHeader(0, "Start MCP Server + Dashboard");
+
+  await killPort(4022);
+  await killPort(3000);
+  console.log(`${elapsed()}  Cleared ports 4022 and 3000`);
+
+  spawnDetached("npx", ["tsx", "apps/mcp-server/src/server.ts"], "MCP Server (:4022)");
+  spawnDetached("pnpm", ["dashboard"], "Dashboard (:3000)");
+
+  console.log(`${elapsed()}  Waiting for MCP server on :4022 ...`);
+  await waitForEndpoint(4022, "/health");
+  console.log(`${elapsed()}  MCP server is ready`);
+
+  console.log(`${elapsed()}  Waiting for dashboard on :3000 (may take 30-60s first build) ...`);
+  await waitForEndpoint(3000, "/", 120000);
+  console.log(`${elapsed()}  Dashboard is ready at http://localhost:3000`);
+
+  console.log(`${elapsed()}  ✅ Both services running`);
+}
+
 async function main() {
   console.log("\n" + "═".repeat(50));
   console.log("  SWIGPAY DEMO FLOW — Full End-to-End Walkthrough");
   console.log("═".repeat(50));
   console.log(`${elapsed()}  Started at ${new Date().toISOString()}\n`);
+
+  await startServices();
 
   await step1_walletStatus();
   await step2_listTools();
@@ -381,7 +439,8 @@ async function main() {
     }
   }
 
-  console.log();
+  console.log(`\n  MCP server still running on :4022`);
+  console.log(`  Dashboard still running at http://localhost:3000\n`);
 }
 
 main().catch((err) => {
