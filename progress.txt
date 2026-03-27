@@ -268,4 +268,19 @@ Started: 2026-03-23
 - Typecheck passes: `pnpm --filter @swigpay/agent-wallet run typecheck` — zero errors
 - Committed: `feat: [US-A1] Add tool_args column to DB schema + pending approval query`
 - PRD: US-A1 passes=true
+- PRD: US-A1 passes=true
+
+### 2026-03-26 — US-A2: Add expensive_tool to MCP server at approval threshold price
+
+- Added `EXPENSIVE_TOOL_PRICE_USD = 0.50` to apps/mcp-server/src/config.ts
+- Created second `expensivePaymentAccepts` via `buildPaymentRequirements` at $0.50 price
+- Created second `wrapExpensivePayment` wrapper instance
+- Registered `expensive_tool` with description mentioning $0.50 cost and human approval requirement
+- Tool returns JSON with analysis, confidence (0.95), timestamp, details fields
+- Tool wrapped with wrapExpensivePayment (x402 payment verification)
+- Updated /health endpoint tools list to include 'expensive_tool (paid, requires approval)'
+- Updated server startup log to show expensive_tool with separate price line
+- Typecheck passes: `pnpm --filter @swigpay/mcp-server run typecheck` — zero errors
+- Committed: `feat: [US-A2] Add expensive_tool to MCP server at approval threshold price`
+- PRD: US-A2 passes=true
 

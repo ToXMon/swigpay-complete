@@ -18,7 +18,7 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { fetchSolanaPrice } from "./tools/solanaPrice.js";
 import { fetchAccountInfo } from "./tools/accountInfo.js";
-import { FACILITATOR_URL, MCP_PRICE_PER_CALL_USD, MCP_SERVER_PORT } from "./config.js";
+import { FACILITATOR_URL, MCP_PRICE_PER_CALL_USD, MCP_SERVER_PORT, EXPENSIVE_TOOL_PRICE_USD } from "./config.js";
 import { SquadsFacilitatorClient } from "./squadsFacilitatorClient.js";
 
 loadEnv({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
@@ -60,6 +60,17 @@ async function main() {
 
   const wrapWithPayment = createPaymentWrapper(resourceServer, { accepts: paymentAccepts });
 
+  // ---- Expensive tool payment requirements ($0.50 = approval threshold) ----
+  const expensivePaymentAccepts = await resourceServer.buildPaymentRequirements({
+    scheme: "exact",
+    network: SOLANA_DEVNET_CAIP2,
+    payTo: SERVER_WALLET_ADDRESS!,
+    price: `$${EXPENSIVE_TOOL_PRICE_USD}`,
+  });
+  console.log(`✅ Expensive payment requirements built ($${EXPENSIVE_TOOL_PRICE_USD})`);
+
+  const wrapExpensivePayment = createPaymentWrapper(resourceServer, { accepts: expensivePaymentAccepts });
+
   // ---- Session management ----
   const transports: Record<string, StreamableHTTPServerTransport> = {};
 
@@ -95,6 +106,24 @@ async function main() {
         console.log(`[x402] account_info(${args.address}) — payment verified ✅`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+        };
+      })
+    );
+
+    // Paid tool 3: Expensive analysis ($0.50 USDC — requires human approval)
+    server.tool(
+      "expensive_tool",
+      `Expensive analysis tool. Costs $${EXPENSIVE_TOOL_PRICE_USD} USDC on Solana Devnet. Requires human approval via dashboard before payment executes.`,
+      {},
+      wrapExpensivePayment(async () => {
+        console.log(`[x402] expensive_tool called — payment verified ✅`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({
+            analysis: "Comprehensive on-chain analysis completed",
+            confidence: 0.95,
+            timestamp: new Date().toISOString(),
+            details: "Multi-factor wallet risk assessment with transaction history analysis",
+          }, null, 2) }],
         };
       })
     );
@@ -155,13 +184,14 @@ async function main() {
 
   // Health check (no payment required)
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", server: "swigpay-mcp", network: SOLANA_DEVNET_CAIP2, pricePerCall: `$${PRICE}`, tools: ["ping (free)", "solana_price (paid)", "account_info (paid)"] });
+    res.json({ status: "ok", server: "swigpay-mcp", network: SOLANA_DEVNET_CAIP2, pricePerCall: `$${PRICE}`, tools: ["ping (free)", "solana_price (paid)", "account_info (paid)", "expensive_tool (paid, requires approval)"] });
   });
 
   app.listen(PORT, () => {
     console.log(`\n✅ SwigPay MCP Server running on http://localhost:${PORT}/mcp`);
     console.log(`   Free:  ping`);
     console.log(`   Paid:  solana_price, account_info ($${PRICE} USDC each)`);
+    console.log(`   Paid:  expensive_tool ($${EXPENSIVE_TOOL_PRICE_USD} USDC, requires approval)`);
     console.log(`   Test:  curl http://localhost:${PORT}/health\n`);
   });
 }

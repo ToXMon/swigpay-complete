@@ -12,3 +12,4 @@ export const FACILITATOR_URL = env.FACILITATOR_URL;
 export const MCP_PRICE_PER_CALL_USD = env.MCP_PRICE_PER_CALL_USD;
 export const MCP_SERVER_PORT = env.MCP_SERVER_PORT;
 export const SOLANA_RPC_URL = env.SOLANA_RPC_URL ?? clusterApiUrl("devnet");
+export const EXPENSIVE_TOOL_PRICE_USD = 0.50;

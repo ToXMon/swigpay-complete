@@ -33,7 +33,7 @@
         "pnpm --filter @swigpay/mcp-server run typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "The tool needs its own price constant since it's different from the other tools ($0.50 vs $0.001). Add EXPENSIVE_TOOL_PRICE_USD = 0.50 to apps/mcp-server/src/config.ts. Create a separate paymentAccepts for this tool using the higher price. You'll need to create a second wrapWithPayment instance or pass the price dynamically. Simplest approach: create a second resourceServer.buildPaymentRequirements call with the higher price and a second wrapWithPayment. Read server.ts lines 43-61 for the pattern."
     },
     {
