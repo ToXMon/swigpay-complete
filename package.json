@@ -11,6 +11,7 @@
     "provision": "tsx scripts/provision-agent.ts",
     "setup": "tsx scripts/setup-wallets.ts",
     "fund-check": "tsx scripts/fund-check.ts",
+    "demo-flow": "tsx scripts/demo-flow.ts",
     "typecheck": "pnpm run --recursive typecheck",
     "build": "pnpm run --recursive build",
     "test": "node --eval \"console.log('No root tests configured')\""

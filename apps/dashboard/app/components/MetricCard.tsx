@@ -26,12 +26,12 @@ export function MetricCard({
 
   return (
     <div 
-      className={`rounded-2xl border p-4 shadow-[0_12px_30px_rgba(0,0,0,0.18)] ${toneClasses} animate-fade-in-up`}
+      className={`rounded-2xl border p-5 shadow-[0_12px_30px_rgba(0,0,0,0.18)] ${toneClasses} animate-fade-in-up`}
       style={{ animationDelay }}
     >
-      <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{title}</p>
-      <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-gray-400">{caption}</p>
+      <p className="text-xs font-medium uppercase tracking-[0.15em] text-gray-400">{title}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p>
+      <p className="mt-1.5 text-sm leading-snug text-gray-300">{caption}</p>
     </div>
   );
 }

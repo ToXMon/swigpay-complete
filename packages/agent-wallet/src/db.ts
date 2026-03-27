@@ -139,6 +139,13 @@ export function getPendingApproval(id: number): PaymentRecord | null {
   return row ? mapPaymentRow(row) : null;
 }
 
+export function getPaymentById(id: number): PaymentRecord | null {
+  const row = getDb()
+    .prepare("SELECT * FROM payments WHERE id = ?")
+    .get(id) as PaymentRow | undefined;
+  return row ? mapPaymentRow(row) : null;
+}
+
 export function getSpentToday(agentId: string): number {
   const today = new Date().toISOString().split("T")[0];
   const result = getDb()

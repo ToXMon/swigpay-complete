@@ -30,91 +30,94 @@ export function AgentOverview({ config, spentToday }: AgentOverviewProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
-    <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gray-900/80 p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.03)] backdrop-blur">
+    <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gray-900/80 p-6 backdrop-blur">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold text-white">OpenClaw Agent Wallet</h2>
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <h2 className="text-lg font-semibold text-white">OpenClaw Agent Wallet</h2>
+            </div>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-300">
               Active
             </span>
           </div>
-          <p className="max-w-2xl text-sm text-gray-400">
-            Autonomous x402 payments stay inside a Squads spending limit while the dashboard keeps a human-readable audit trail.
+          <p className="max-w-2xl text-sm leading-relaxed text-gray-300">
+            Autonomous x402 payments routed through Squads v4 spending limits with human oversight.
           </p>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Remaining today</p>
-          <p className="mt-2 text-xl font-semibold text-white">{formatUsdc(remainingToday)}</p>
-          <p className="mt-1 text-xs text-gray-400">{percentUsed.toFixed(0)}% of the daily budget used</p>
+          <p className="text-xs font-medium uppercase tracking-[0.15em] text-emerald-300">Remaining today</p>
+          <p className="mt-2 text-xl font-bold text-white">{formatUsdc(remainingToday)}</p>
+          <p className="mt-1 text-xs text-gray-400">{percentUsed.toFixed(0)}% of daily budget used</p>
         </div>
       </div>
 
       <button
         type="button"
         onClick={() => setDetailsOpen((value) => !value)}
-        className="mt-6 text-sm font-medium text-cyan-300 transition hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+        className="mt-5 text-sm font-medium text-cyan-300 transition hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
       >
-        {detailsOpen ? "Hide details ↑" : "Show details →"}
+        {detailsOpen ? "Hide details" : "Show on-chain details"}
       </button>
 
       {detailsOpen && (
-        <dl className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Agent address</dt>
-          <dd className="mt-3 font-mono text-sm text-white">
-            <ExplorerLink href={`${config.explorerBase}/address/${config.agentAddress}?${clusterQuery}`} className="font-mono text-sm">
-              {shortAddress(config.agentAddress)}
-            </ExplorerLink>
-          </dd>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Vault PDA</dt>
-          <dd className="mt-3 font-mono text-sm text-white">
-            <ExplorerLink href={`${config.explorerBase}/address/${config.vaultPda}?${clusterQuery}`} className="font-mono text-sm">
-              {shortAddress(config.vaultPda)}
-            </ExplorerLink>
-          </dd>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Multisig PDA</dt>
-          <dd className="mt-3 font-mono text-sm text-white">
-            <ExplorerLink href={`${config.explorerBase}/address/${config.multisigPda}?${clusterQuery}`} className="font-mono text-sm">
-              {shortAddress(config.multisigPda)}
-            </ExplorerLink>
-          </dd>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Spending limit PDA</dt>
-          <dd className="mt-3 font-mono text-sm text-white">
-            <ExplorerLink href={`${config.explorerBase}/address/${config.spendingLimitPda}?${clusterQuery}`} className="font-mono text-sm">
-              {shortAddress(config.spendingLimitPda)}
-            </ExplorerLink>
-          </dd>
-        </div>
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
-          <dt className="text-xs uppercase tracking-[0.2em] text-gray-500">Limits</dt>
-          <dd className="mt-3 space-y-1 text-sm text-white">
-            <p>{formatUsdc(config.dailyLimitUsdc)} daily</p>
-            <p className="text-gray-400">{formatUsdc(config.perTxLimitUsdc)} per transaction</p>
-          </dd>
-        </div>
+        <dl className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Agent address</dt>
+            <dd className="mt-2">
+              <ExplorerLink href={`${config.explorerBase}/address/${config.agentAddress}?${clusterQuery}`} className="font-mono text-sm text-white">
+                {shortAddress(config.agentAddress)}
+              </ExplorerLink>
+            </dd>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Vault PDA</dt>
+            <dd className="mt-2">
+              <ExplorerLink href={`${config.explorerBase}/address/${config.vaultPda}?${clusterQuery}`} className="font-mono text-sm text-white">
+                {shortAddress(config.vaultPda)}
+              </ExplorerLink>
+            </dd>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Multisig PDA</dt>
+            <dd className="mt-2">
+              <ExplorerLink href={`${config.explorerBase}/address/${config.multisigPda}?${clusterQuery}`} className="font-mono text-sm text-white">
+                {shortAddress(config.multisigPda)}
+              </ExplorerLink>
+            </dd>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Spending limit</dt>
+            <dd className="mt-2">
+              <ExplorerLink href={`${config.explorerBase}/address/${config.spendingLimitPda}?${clusterQuery}`} className="font-mono text-sm text-white">
+                {shortAddress(config.spendingLimitPda)}
+              </ExplorerLink>
+            </dd>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Policy limits</dt>
+            <dd className="mt-2 space-y-1">
+              <p className="text-sm font-medium text-white">{formatUsdc(config.dailyLimitUsdc)} daily</p>
+              <p className="text-sm text-gray-400">{formatUsdc(config.perTxLimitUsdc)} per tx</p>
+            </dd>
+          </div>
         </dl>
       )}
 
-      <div className="mt-6 rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+      <div className="mt-5 rounded-xl border border-gray-800 bg-gray-950/70 p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Daily spend usage</p>
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-gray-500">Daily spend</p>
             <p className="mt-2 text-base font-semibold text-white">
-              {formatUsdc(spentToday)} used of {formatUsdc(config.dailyLimitUsdc)}
+              {formatUsdc(spentToday)} of {formatUsdc(config.dailyLimitUsdc)}
             </p>
           </div>
           <p className="text-sm text-gray-400">Solana {config.network}</p>
         </div>
-        <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-gray-800">
+        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-800">
           <div 
-            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-500" 
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-700" 
             style={{ width: `${Math.max(0, Math.min(100, percentUsed))}%` }}
           />
         </div>

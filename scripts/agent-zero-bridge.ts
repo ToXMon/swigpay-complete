@@ -365,9 +365,11 @@ async function retryApproved(): Promise<void> {
   // Parse stored tool args
   const retryArgs: Record<string, unknown> = record.toolArgs ? JSON.parse(record.toolArgs) : {};
 
-  // Build config with BYPASSED threshold so x402client doesn't re-check
+  // Build config with BYPASSED limits so x402client doesn't re-check
   const agentConfig = loadAgentConfigFromEnv();
   agentConfig.approvalThresholdUsdc = 9999;
+  agentConfig.perTxLimitUsdc = 9999;
+  agentConfig.dailyLimitUsdc = 9999;
 
   const { callTool: callMcpTool, close } = await createSwigPayClient({
     agentConfig,
