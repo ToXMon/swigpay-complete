@@ -1,7 +1,6 @@
-# Environment — NEVER commit
-.env
-.env.local
-.env.*.local
+# Environment — NEVER commit (contains wallet private keys!)
+.env*
+!.env.example
 
 # Wallets — NEVER commit
 *.json.bak
