@@ -36,9 +36,6 @@ function elapsed(): string {
 }
 
 function stepHeader(n: number, title: string) {
-  console.log(`\n${"━".repeat(50)}`);
-  console.log(`${elapsed()}  STEP ${n}: ${title}`);
-  console.log(`${"━".repeat(50)}`);
 }
 
 function loadAgentConfigFromEnv(): AgentConfig {
@@ -92,14 +89,8 @@ async function step1_walletStatus() {
   const vaultPda = process.env.SQUADS_VAULT_PDA ?? null;
   const spendingLimitPda = process.env.SQUADS_SPENDING_LIMIT_PDA ?? null;
 
-  console.log(`${elapsed()}  Agent:    ${agentAddress ?? "NOT SET"}`);
-  console.log(`${elapsed()}  Human:    ${humanAddress ?? "NOT SET"}`);
-  console.log(`${elapsed()}  Multisig: ${multisigPda ?? "NOT SET"}`);
-  console.log(`${elapsed()}  Vault:    ${vaultPda ?? "NOT SET"}`);
-  console.log(`${elapsed()}  SpendLim: ${spendingLimitPda ?? "NOT SET"}`);
 
   if (!vaultPda) {
-    console.log(`${elapsed()}  ⚠ No vault PDA — run 'pnpm provision' and 'pnpm tsx scripts/agent-zero-bridge.ts fund' first`);
     process.exit(1);
   }
 
@@ -113,9 +104,7 @@ async function step1_walletStatus() {
       owner: agentKeypair.publicKey,
     });
     const agentBal = await connection.getTokenAccountBalance(agentUsdcAccount);
-    console.log(`${elapsed()}  Agent USDC balance: ${Number(agentBal.value.amount) / USDC_RAW_MULTIPLIER}`);
   } catch {
-    console.log(`${elapsed()}  ⚠ Could not read agent USDC balance`);
   }
 
   try {
@@ -125,12 +114,9 @@ async function step1_walletStatus() {
       owner: new PublicKey(vaultPda),
     });
     const vaultBal = await connection.getTokenAccountBalance(vaultUsdcAta);
-    console.log(`${elapsed()}  Vault USDC balance: ${Number(vaultBal.value.amount) / USDC_RAW_MULTIPLIER}`);
   } catch {
-    console.log(`${elapsed()}  ⚠ Could not read vault USDC balance`);
   }
 
-  console.log(`${elapsed()}  ✅ Wallet status complete`);
 }
 
 async function step2_listTools() {
@@ -146,15 +132,12 @@ async function step2_listTools() {
 
   try {
     const { tools } = await listMcpTools();
-    console.log(`${elapsed()}  Available tools (${tools.length}):`);
     for (const t of tools) {
-      console.log(`       • ${t.name} — ${t.description}`);
     }
   } finally {
     await close();
   }
 
-  console.log(`${elapsed()}  ✅ Tool list complete`);
 }
 
 async function step3_callPing() {
@@ -169,16 +152,12 @@ async function step3_callPing() {
   });
 
   try {
-    console.log(`${elapsed()}  Calling ping...`);
     const result = await callMcpTool("ping", {});
     const text = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
-    console.log(`${elapsed()}  Result: ${text}`);
-    console.log(`${elapsed()}  Payment made: ${result.paymentMade ?? false}`);
   } finally {
     await close();
   }
 
-  console.log(`${elapsed()}  ✅ Ping complete`);
 }
 
 async function step4_callSolanaPrice() {
@@ -193,11 +172,8 @@ async function step4_callSolanaPrice() {
   });
 
   try {
-    console.log(`${elapsed()}  Calling solana_price...`);
     const result = await callMcpTool("solana_price", {});
     const text = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
-    console.log(`${elapsed()}  Result: ${text}`);
-    console.log(`${elapsed()}  Payment made: ${result.paymentMade ?? false}`);
 
     if (result.paymentMade && result.paymentResponse) {
       const pr = result.paymentResponse as {
@@ -207,15 +183,11 @@ async function step4_callSolanaPrice() {
       };
       const txHash = pr.transaction ?? "";
       const amountRaw = Number(pr.extensions?.amountRaw ?? 0);
-      console.log(`${elapsed()}  Amount: ${amountRaw / USDC_RAW_MULTIPLIER} USDC`);
-      console.log(`${elapsed()}  TxHash: ${txHash}`);
-      console.log(`${elapsed()}  Explorer: ${buildExplorerTransactionUrl(txHash)}`);
     }
   } finally {
     await close();
   }
 
-  console.log(`${elapsed()}  ✅ solana_price complete`);
 }
 
 async function step5_callExpensiveTool(): Promise<number | null> {
@@ -231,7 +203,6 @@ async function step5_callExpensiveTool(): Promise<number | null> {
     policy,
   });
 
-  console.log(`${elapsed()}  Spend policy result: ${policyResult.reason ?? "approved"}`);
 
   if (!policyResult.approved && policyResult.requiresHumanApproval) {
     const amountRaw = Math.round(toolPriceUsdc * USDC_RAW_MULTIPLIER);
@@ -248,18 +219,10 @@ async function step5_callExpensiveTool(): Promise<number | null> {
       toolArgs: JSON.stringify({}),
     });
 
-    console.log(`${elapsed()}  ⏳ Payment status: pending_approval`);
-    console.log(`${elapsed()}  Payment ID: ${paymentId}`);
-    console.log(`${elapsed()}  Amount: ${toolPriceUsdc} USDC`);
-    console.log();
-    console.log(`  >> Go to http://localhost:3000 and click "Approve" for payment #${paymentId}`);
-    console.log(`  >> Or use: pnpm tsx scripts/agent-zero-bridge.ts retry-approved ${paymentId}`);
-    console.log();
 
     return paymentId;
   }
 
-  console.log(`${elapsed()}  ⚠ Policy did not require approval (threshold may be misconfigured)`);
   return null;
 }
 
@@ -271,13 +234,10 @@ async function step6_pollForApproval(paymentId: number): Promise<boolean> {
   const deadline = Date.now() + MAX_WAIT_S * 1000;
   let dots = 0;
 
-  console.log(`${elapsed()}  Waiting for payment #${paymentId} to be approved...`);
-  console.log(`${elapsed()}  (Will auto-retry once approved)\n`);
 
   while (Date.now() < deadline) {
     const approved = getPendingApproval(paymentId);
     if (approved) {
-      console.log(`\n${elapsed()}  ✅ Payment #${paymentId} APPROVED!`);
       return true;
     }
 
@@ -288,7 +248,6 @@ async function step6_pollForApproval(paymentId: number): Promise<boolean> {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
 
-  console.log(`\n${elapsed()}  ⏰ Timed out after ${MAX_WAIT_S}s waiting for approval`);
   return false;
 }
 
@@ -297,7 +256,6 @@ async function step7_retryPayment(paymentId: number): Promise<string | null> {
 
   const record = getPaymentById(paymentId);
   if (!record) {
-    console.log(`${elapsed()}  ⚠ Payment #${paymentId} not found in database`);
     return null;
   }
 
@@ -316,12 +274,9 @@ async function step7_retryPayment(paymentId: number): Promise<string | null> {
   });
 
   try {
-    console.log(`${elapsed()}  Calling expensive_tool with bypassed limits...`);
     const result = await callMcpTool(record.tool, retryArgs);
     const text = (result.content as Array<{ text?: string }>)[0]?.text ?? "";
 
-    console.log(`${elapsed()}  Result: ${text}`);
-    console.log(`${elapsed()}  Payment made: ${result.paymentMade ?? false}`);
 
     if (result.paymentMade && result.paymentResponse) {
       const pr = result.paymentResponse as {
@@ -331,13 +286,9 @@ async function step7_retryPayment(paymentId: number): Promise<string | null> {
       };
       const txHash = pr.transaction ?? "";
       const amountRaw = Number(pr.extensions?.amountRaw ?? 0);
-      console.log(`${elapsed()}  Amount: ${amountRaw / USDC_RAW_MULTIPLIER} USDC`);
-      console.log(`${elapsed()}  TxHash: ${txHash}`);
-      console.log(`${elapsed()}  Explorer: ${buildExplorerTransactionUrl(txHash)}`);
       return txHash;
     }
 
-    console.log(`${elapsed()}  ⚠ No payment was made (check logs above)`);
     return null;
   } finally {
     await close();
@@ -374,7 +325,6 @@ function spawnDetached(cmd: string, args: string[], label: string) {
     env: { ...process.env },
   });
   child.unref();
-  console.log(`${elapsed()}  [bg] ${label} started (pid ${child.pid})`);
 }
 
 async function startServices(): Promise<void> {
@@ -382,27 +332,17 @@ async function startServices(): Promise<void> {
 
   await killPort(4022);
   await killPort(3000);
-  console.log(`${elapsed()}  Cleared ports 4022 and 3000`);
 
   spawnDetached("npx", ["tsx", "apps/mcp-server/src/server.ts"], "MCP Server (:4022)");
   spawnDetached("pnpm", ["dashboard"], "Dashboard (:3000)");
 
-  console.log(`${elapsed()}  Waiting for MCP server on :4022 ...`);
   await waitForEndpoint(4022, "/health");
-  console.log(`${elapsed()}  MCP server is ready`);
 
-  console.log(`${elapsed()}  Waiting for dashboard on :3000 (may take 30-60s first build) ...`);
   await waitForEndpoint(3000, "/", 120000);
-  console.log(`${elapsed()}  Dashboard is ready at http://localhost:3000`);
 
-  console.log(`${elapsed()}  ✅ Both services running`);
 }
 
 async function main() {
-  console.log("\n" + "═".repeat(50));
-  console.log("  SWIGPAY DEMO FLOW — Full End-to-End Walkthrough");
-  console.log("═".repeat(50));
-  console.log(`${elapsed()}  Started at ${new Date().toISOString()}\n`);
 
   await startServices();
 
@@ -423,24 +363,15 @@ async function main() {
         explorerLinks.push(buildExplorerTransactionUrl(txHash));
       }
     } else {
-      console.log(`\n${elapsed()}  Skipping retry — payment was not approved`);
     }
   }
 
-  console.log(`\n${"═".repeat(50)}`);
-  console.log("  DEMO COMPLETE");
-  console.log(`${"═".repeat(50)}`);
-  console.log(`${elapsed()}  Total time: ${((Date.now() - START) / 1000).toFixed(1)}s`);
 
   if (explorerLinks.length > 0) {
-    console.log(`\n  Explorer links:`);
     for (const url of explorerLinks) {
-      console.log(`    🔗 ${url}`);
     }
   }
 
-  console.log(`\n  MCP server still running on :4022`);
-  console.log(`  Dashboard still running at http://localhost:3000\n`);
 }
 
 main().catch((err) => {

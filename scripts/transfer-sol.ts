@@ -16,15 +16,12 @@ async function transferSol() {
     throw new Error("Missing required env vars: SERVER_WALLET_PRIVATE_KEY_BASE58, AGENT_PRIVATE_KEY_BASE58, HUMAN_ADDRESS");
   }
 
-  console.log("🔄 Transferring SOL to Human wallet...");
-  console.log(`Human wallet: ${humanAddress}`);
 
   const serverKeypair = Keypair.fromSecretKey(base58.decode(serverKey));
   const agentKeypair = Keypair.fromSecretKey(base58.decode(agentKey));
   const humanPubkey = new PublicKey(humanAddress);
 
   // Transfer 0.5 SOL from server wallet
-  console.log("Sending 0.5 SOL from Server wallet...");
   const serverTx = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: serverKeypair.publicKey,
@@ -34,10 +31,8 @@ async function transferSol() {
   );
 
   const serverSignature = await sendAndConfirmTransaction(connection, serverTx, [serverKeypair]);
-  console.log(`✅ Server transfer confirmed: ${serverSignature}`);
 
   // Transfer 0.5 SOL from agent wallet
-  console.log("Sending 0.5 SOL from Agent wallet...");
   const agentTx = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: agentKeypair.publicKey,
@@ -47,9 +42,7 @@ async function transferSol() {
   );
 
   const agentSignature = await sendAndConfirmTransaction(connection, agentTx, [agentKeypair]);
-  console.log(`✅ Agent transfer confirmed: ${agentSignature}`);
 
-  console.log("\n🎉 Transfers complete! Human wallet should now have 1 SOL");
 }
 
 transferSol().catch(console.error);

@@ -197,7 +197,6 @@ export class SquadsFacilitatorClient implements FacilitatorClient {
       }
 
       const payer = messageAccounts.find((account) => account.signer)?.pubkey.toBase58();
-      console.log("[x402] Verified Squads spendingLimitUse payment", {
         amount_usdc: Number(paymentRequirements.amount) / 1_000_000,
         tool: "paid_tool",
         txHash: signature,

@@ -35,9 +35,6 @@ export class SquadsExactScheme implements SchemeNetworkClient {
     context?: unknown
   ): Promise<PaymentPayload> {
     try {
-      console.log("[squads-scheme] Executing payment via Squads spendingLimitUse");
-      console.log(`[squads-scheme] Amount: ${paymentRequirements.amount} ${paymentRequirements.asset || "USDC"}`);
-      console.log(`[squads-scheme] To: ${paymentRequirements.payTo}`);
 
       const amountUsdc = Number(paymentRequirements.amount) / 1_000_000;
       const { txHash } = await executeSpendingLimitPayment({
@@ -48,7 +45,6 @@ export class SquadsExactScheme implements SchemeNetworkClient {
         amountUsdc,
       });
 
-      console.log(`[squads-scheme] Payment executed via Squads: ${txHash}`);
       return {
         x402Version,
         accepted: paymentRequirements,

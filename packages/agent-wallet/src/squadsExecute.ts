@@ -38,12 +38,6 @@ export async function executeSpendingLimitPayment(params: {
       owner: destinationPublicKey,
     });
 
-    console.log("[squads] Executing spending limit payment:");
-    console.log(`[squads]   To: ${destinationAddress}`);
-    console.log(`[squads]   Amount: ${amountUsdc} USDC (${amountRaw} raw)`);
-    console.log(`[squads]   Vault: ${vaultPda.toBase58()}`);
-    console.log(`[squads]   Vault USDC ATA: ${vaultTokenAccount.toBase58()}`);
-    console.log(`[squads]   Destination USDC ATA: ${destinationTokenAccount.toBase58()}`);
 
     const txHash = await multisig.rpc.spendingLimitUse({
       connection,
@@ -62,7 +56,6 @@ export async function executeSpendingLimitPayment(params: {
 
     await connection.confirmTransaction(txHash, "confirmed");
     const explorerUrl = buildExplorerTransactionUrl(txHash);
-    console.log(`[squads] Payment confirmed ✅ ${explorerUrl}`);
 
     return { txHash, explorerUrl };
   } catch (error) {

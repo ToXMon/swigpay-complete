@@ -33,12 +33,6 @@ if (!SERVER_WALLET_ADDRESS) {
   process.exit(1);
 }
 
-console.log("🚀 Starting SwigPay MCP Server...");
-console.log(`   Network:     ${SOLANA_DEVNET_CAIP2}`);
-console.log(`   USDC Mint:   ${USDC_DEVNET_ADDRESS}`);
-console.log(`   Pay To:      ${SERVER_WALLET_ADDRESS}`);
-console.log(`   Facilitator: ${FACILITATOR_URL}`);
-console.log(`   Price/call:  $${PRICE} USDC`);
 
 async function main() {
   // ---- x402 setup ----
@@ -48,7 +42,6 @@ async function main() {
   );
   resourceServer.register(SOLANA_DEVNET_CAIP2, new ExactSvmScheme());
   await resourceServer.initialize();
-  console.log("✅ x402 ResourceServer initialized");
 
   const paymentAccepts = await resourceServer.buildPaymentRequirements({
     scheme: "exact",
@@ -56,7 +49,6 @@ async function main() {
     payTo: SERVER_WALLET_ADDRESS!,
     price: `$${PRICE}`,
   });
-  console.log(`✅ Payment requirements built (${paymentAccepts.length} scheme(s))`);
 
   const wrapWithPayment = createPaymentWrapper(resourceServer, { accepts: paymentAccepts });
 
@@ -67,7 +59,6 @@ async function main() {
     payTo: SERVER_WALLET_ADDRESS!,
     price: `$${EXPENSIVE_TOOL_PRICE_USD}`,
   });
-  console.log(`✅ Expensive payment requirements built ($${EXPENSIVE_TOOL_PRICE_USD})`);
 
   const wrapExpensivePayment = createPaymentWrapper(resourceServer, { accepts: expensivePaymentAccepts });
 
@@ -89,7 +80,6 @@ async function main() {
       {},
       wrapWithPayment(async () => {
         const data = await fetchSolanaPrice();
-        console.log(`[x402] solana_price called — payment verified ✅`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
         };
@@ -103,7 +93,6 @@ async function main() {
       { address: z.string().describe("Solana wallet or program address (base58)") },
       wrapWithPayment(async (args: { address: string }) => {
         const data = await fetchAccountInfo(args.address);
-        console.log(`[x402] account_info(${args.address}) — payment verified ✅`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
         };
@@ -116,7 +105,6 @@ async function main() {
       `Expensive analysis tool. Costs $${EXPENSIVE_TOOL_PRICE_USD} USDC on Solana Devnet. Requires human approval via dashboard before payment executes.`,
       {},
       wrapExpensivePayment(async () => {
-        console.log(`[x402] expensive_tool called — payment verified ✅`);
         return {
           content: [{ type: "text" as const, text: JSON.stringify({
             analysis: "Comprehensive on-chain analysis completed",
@@ -145,14 +133,12 @@ async function main() {
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (sid) => {
             transports[sid] = transport;
-            console.log(`📡 Client connected: ${sid}`);
           },
         });
         transport.onclose = () => {
           const sid = transport.sessionId;
           if (sid && transports[sid]) {
             delete transports[sid];
-            console.log(`📡 Client disconnected: ${sid}`);
           }
         };
         const server = createMcpServer();
@@ -188,11 +174,6 @@ async function main() {
   });
 
   app.listen(PORT, () => {
-    console.log(`\n✅ SwigPay MCP Server running on http://localhost:${PORT}/mcp`);
-    console.log(`   Free:  ping`);
-    console.log(`   Paid:  solana_price, account_info ($${PRICE} USDC each)`);
-    console.log(`   Paid:  expensive_tool ($${EXPENSIVE_TOOL_PRICE_USD} USDC, requires approval)`);
-    console.log(`   Test:  curl http://localhost:${PORT}/health\n`);
   });
 }
 

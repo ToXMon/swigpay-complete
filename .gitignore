@@ -26,3 +26,7 @@ node_modules/
 .DS_Store
 *.log
 .turbo/
+
+build
+__pycache__
+target/

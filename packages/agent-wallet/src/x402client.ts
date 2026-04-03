@@ -38,9 +38,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
   const { agentConfig, agentPrivateKeyBase58, mcpServerUrl } = options;
   const serverUrl = mcpServerUrl ?? DEFAULT_MCP_SERVER_URL;
 
-  console.log(`[x402client] Creating SwigPay client for agent: ${agentConfig.agentAddress}`);
-  console.log(`[x402client] Multisig PDA: ${agentConfig.multisigPda}`);
-  console.log(`[x402client] Vault PDA: ${agentConfig.vaultPda}`);
 
   const policy: SpendPolicy = {
     dailyLimitUsdc: agentConfig.dailyLimitUsdc,
@@ -72,11 +69,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
       const amountRaw = Number(req?.amount ?? 0);
       const amountUsdc = amountRaw / USDC_RAW_MULTIPLIER;
 
-      console.log(`\n[x402] Payment requested:`);
-      console.log(`[x402]   Tool:    ${(context as { toolName?: string }).toolName ?? "unknown"}`);
-      console.log(`[x402]   Network: ${req?.network}`);
-      console.log(`[x402]   Amount:  ${amountUsdc} USDC (${amountRaw} raw)`);
-      console.log(`[x402]   Asset:   ${req?.asset}`);
 
       // Enforce spend policy before approving payment
       const policyResult = enforceSpendPolicy({
@@ -87,7 +79,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
       });
 
       if (!policyResult.approved) {
-        console.log(`[x402] ❌ Payment REJECTED by spend policy: ${policyResult.reason}`);
 
         // Log rejected payment
         insertPayment({
@@ -105,8 +96,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
         return false; // Deny payment
       }
 
-      console.log(`[x402] ✅ Payment approved by spend policy`);
-      console.log(`[x402]   Routing through Squads spendingLimitUse...`);
       return true; // Approve payment — x402/mcp handles signing + retry
     },
   });
@@ -114,7 +103,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
   // Connect to MCP server
   const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
   await client.connect(transport);
-  console.log(`[x402client] Connected to MCP server: ${serverUrl}`);
 
   // Wrap callTool to log approved payments
   const originalCallTool = client.callTool.bind(client);
@@ -149,10 +137,6 @@ export async function createSwigPayClient(options: SwigPayClientOptions): Promis
           explorerUrl,
         });
 
-        console.log(`[x402] ✅ Payment confirmed via Squads:`);
-        console.log(`[x402]   Amount: ${amountUsdc} USDC`);
-        console.log(`[x402]   TxHash: ${txHash}`);
-        console.log(`[x402]   🔗 ${explorerUrl}`);
       }
 
       return result;

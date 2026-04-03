@@ -60,18 +60,11 @@ export async function provisionAgentWallet(params: {
     const connection = getConnection();
     const configTreasury = await getProgramTreasury(connection);
 
-    console.log("[squads] Provisioning agent wallet...");
-    console.log(`[squads] Agent: ${agentKeypair.publicKey.toBase58()}`);
-    console.log(`[squads] Human: ${humanKeypair.publicKey.toBase58()}`);
-    console.log(`[squads] Daily USDC limit: ${dailyLimitUsdc}`);
 
     const createKey = Keypair.generate();
     const [multisigPda] = multisig.getMultisigPda({ createKey: createKey.publicKey });
     const [vaultPda] = multisig.getVaultPda({ multisigPda, index: 0 });
 
-    console.log(`[squads] Multisig PDA: ${multisigPda.toBase58()}`);
-    console.log(`[squads] Vault PDA:    ${vaultPda.toBase58()}`);
-    console.log(`[squads] Explorer:     ${buildExplorerAddressUrl(vaultPda.toBase58())}`);
 
     const sig = await multisig.rpc.multisigCreateV2({
       connection,
@@ -90,10 +83,7 @@ export async function provisionAgentWallet(params: {
       memo: `SwigPay agent: ${agentName}`,
     });
 
-    console.log(`[squads] Multisig created: ${sig}`);
-    console.log(`[squads] ${buildExplorerTransactionUrl(sig)}`);
     await connection.confirmTransaction(sig, "confirmed");
-    console.log("[squads] Multisig confirmed ✅");
 
     const limitCreateKey = Keypair.generate();
     const [spendingLimitPda] = multisig.getSpendingLimitPda({
@@ -119,10 +109,7 @@ export async function provisionAgentWallet(params: {
       memo: `Spending limit: ${dailyLimitUsdc} USDC/day`,
     });
 
-    console.log(`[squads] Spending limit created: ${limitSig}`);
     await connection.confirmTransaction(limitSig, "confirmed");
-    console.log(`[squads] Spending limit confirmed ✅`);
-    console.log(`[squads] Spending limit PDA: ${spendingLimitPda.toBase58()}`);
 
     const vaultUsdcAta = await ensureUsdcAssociatedTokenAccount({
       connection,
@@ -144,16 +131,6 @@ export async function provisionAgentWallet(params: {
       createdAt: new Date().toISOString(),
     };
 
-    console.log("\n[squads] ✅ Agent wallet provisioned:");
-    console.log(JSON.stringify(config, null, 2));
-    console.log(`\n📋 Add to .env:`);
-    console.log(`SQUADS_MULTISIG_PDA=${config.multisigPda}`);
-    console.log(`SQUADS_VAULT_PDA=${config.vaultPda}`);
-    console.log(`SQUADS_SPENDING_LIMIT_PDA=${config.spendingLimitPda}`);
-    console.log(`\n💰 Fund the vault with USDC:`);
-    console.log(`   Vault PDA: ${config.vaultPda}`);
-    console.log(`   Vault USDC ATA: ${vaultUsdcAta.toBase58()}`);
-    console.log(`   Expected Vault USDC ATA: ${getUsdcAssociatedTokenAddress(vaultPda).toBase58()}`);
 
     return config;
   } catch (error) {
