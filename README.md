@@ -87,3 +87,17 @@ pnpm dashboard      # Dashboard on :3000
 ---
 
 Built for Penn Blockchain Conference Hackathon 2026.
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit changes: `git commit -m "feat: description"`
+4. Push: `git push origin feature/my-feature`
+5. Open a Pull Request
+
+## License
+
+Private — All rights reserved. Built for Penn Blockchain Conference Hackathon 2026.
