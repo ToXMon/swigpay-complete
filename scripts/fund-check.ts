@@ -15,7 +15,6 @@ const connection = new Connection(RPC, "confirmed");
 
 async function checkWallet(name: string, address: string | undefined) {
   try {
-    if (!address) { console.log(`${name}: not set`); return; }
     const pubkey = new PublicKey(address);
     const sol = await connection.getBalance(pubkey) / LAMPORTS_PER_SOL;
     const ata = getUsdcAssociatedTokenAddress(pubkey);
